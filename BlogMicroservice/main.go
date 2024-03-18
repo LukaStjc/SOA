@@ -23,14 +23,12 @@ func initDB() *gorm.DB {
 		return nil
 	}
 
-	if err := database.AutoMigrate(&model.Student{}); err != nil {
-		log.Printf("AutoMigrate failed: %v", err)
-		return nil
-	}
+	database.AutoMigrate(&model.Student{})
+	database.AutoMigrate(&model.Blog{})
 
-	// ZAKOMENTARISATI SVE LINIJE "database.Exec" NAKON PRVOG POKRETANJA PROJEKTA
-	// jer ce prvi put dodati red u tabelu a drugi put ce pokusati opet isto da doda pa ce biti Primary key constraint
-	database.Exec("INSERT INTO students VALUES ('aec7e123-233d-4a09-a289-75308ea5b7e6', 'Marko Markovic', 'Graficki dizajn')")
+	// ODKOMENTARISATI LINIJE "database.Exec" KOJE NEMAS SACUVANE U BAZI
+	// da bi bile dodate, one koje vec imas, zakomentarisi jer ce pokusati opet da doda - primary key constraint
+	//database.Exec("INSERT INTO students VALUES ('aec7e123-233d-4a09-a289-75308ea5b7e6', 'Marko Markovic', 'Graficki dizajn')")
 
 	return database
 }
