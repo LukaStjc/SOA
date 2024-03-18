@@ -28,7 +28,14 @@ func initDB() *gorm.DB {
 
 	// ODKOMENTARISATI LINIJE "database.Exec" KOJE NEMAS SACUVANE U BAZI
 	// da bi bile dodate, one koje vec imas, zakomentarisi jer ce pokusati opet da doda - primary key constraint
-	//database.Exec("INSERT INTO students VALUES ('aec7e123-233d-4a09-a289-75308ea5b7e6', 'Marko Markovic', 'Graficki dizajn')")
+
+	// database.Exec("INSERT INTO students VALUES ('aec7e123-233d-4a09-a289-75308ea5b7e6', 'Marko Markovic', 'Graficki dizajn')")
+	// publishDate := time.Date(2024, time.March, 18, 12, 0, 0, 0, time.Local)
+	// query := fmt.Sprintf("insert into blogs values ('33686a82-6686-4d40-99b3-f0736c2bc7f4', "+ // id
+	// 	"'Is xiaomi a good phone?', "+ // title
+	// 	"'Everyone is buying a xiaomi phone nowadays, so Im wondering if they are actually worth buying and how long they last', "+ // description
+	// 	"'%s', '%d')", publishDate.Format("2006-01-02 15:04:05"), model.BlogStatus(1)) // publish date, status
+	// database.Exec(query)
 
 	return database
 }
