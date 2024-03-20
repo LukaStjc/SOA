@@ -118,3 +118,38 @@ func Validate(c *gin.Context) {
 		"message": user,
 	})
 }
+func BlockUser(c *gin.Context) {
+	// Immediately return if the previous middleware aborted the request
+	if c.IsAborted() {
+		return
+	}
+	// Extracting the username from the path
+
+	username := c.Param("username")
+
+	// Find the user by username
+	var user models.User
+	result := initializers.DB.Where("username = ?", username).First(&user)
+
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+	if user.Role.String() != "Tourist" {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "User is not of type - Tourist"})
+		return
+	}
+
+	// Check if user is already blocked
+	if user.Blocked {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "User is already blocked"})
+		return
+	}
+
+	// Update the Blocked field
+	user.Blocked = true
+	initializers.DB.Save(&user)
+
+	c.JSON(http.StatusOK, gin.H{"message": "User blocked successfully"})
+
+}
