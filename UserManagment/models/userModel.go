@@ -26,7 +26,7 @@ func (role UserRole) String() string {
 // Struktura User predstavlja korisnika.
 type User struct {
 	gorm.Model
-	Username string   `json:"username" gorm:"not null;type:string"`
+	Username string   `json:"username" ;unique;gorm:"not null;type:string"`
 	Password string   `json:"password" gorm:"not null;type:string"`
 	Email    string   `json:"email" gorm:"not null;type:string"`
 	Role     UserRole `json:"role"`

@@ -136,8 +136,8 @@ func BlockUser(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
-	if user.Role.String() != "Tourist" {
-		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "User is not of type - Tourist"})
+	if user.Role.String() == "Administrator" {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Can't block an admin"})
 		return
 	}
 
