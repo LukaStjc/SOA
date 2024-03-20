@@ -27,10 +27,11 @@ func (role UserRole) String() string {
 type User struct {
 	gorm.Model
 	// ID       uuid.UUID `json:"id"`
-	Username string   `json:"username" gorm:"not null;type:string"`
+	Username string   `json:"username" gorm:"not null;unique;type:string"`
 	Password string   `json:"password" gorm:"not null;type:string"`
 	Email    string   `json:"email" gorm:"not null;type:string"`
 	Role     UserRole `json:"role"`
+	Blocked  bool     `json:"blocked" gorm:"default:false"`
 }
 
 // func (user *User) BeforeCreate(scope *gorm.DB) error {
