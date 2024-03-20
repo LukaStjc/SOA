@@ -118,6 +118,7 @@ func Validate(c *gin.Context) {
 		"message": user,
 	})
 }
+
 func BlockUser(c *gin.Context) {
 	// Immediately return if the previous middleware aborted the request
 	if c.IsAborted() {
@@ -151,5 +152,50 @@ func BlockUser(c *gin.Context) {
 	initializers.DB.Save(&user)
 
 	c.JSON(http.StatusOK, gin.H{"message": "User blocked successfully"})
+
+}
+
+func Follow(c *gin.Context) {
+	authUser, _ := c.Get("user")
+
+	user := authUser.(models.User)
+	username := c.Param("username")
+
+	// Find the user that I want to follow by username
+	var newUser models.User
+	result := initializers.DB.Where("username = ?", username).First(&newUser)
+
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	if newUser.Role.String() == "Administrator" {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Cannot follow an admin!"})
+		return
+	}
+
+	if user.Role.String() == "Administrator" {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "You are an admin, you cant follow anybody!"})
+		return
+	}
+
+	if user.ID == newUser.ID {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Cannot follow yourself, there will be a profile when frontend is done!"})
+		return
+	}
+
+	for _, u := range user.Follows {
+		if u.ID == newUser.ID {
+			initializers.DB.Model(&user).Association("follow_id").Delete(&newUser)
+			c.JSON(http.StatusOK, gin.H{"message": "User unfollowed"})
+			return
+		}
+	}
+
+	user.Follows = append(user.Follows, &newUser)
+	initializers.DB.Save(&user)
+
+	c.JSON(http.StatusOK, gin.H{"message": "User followed successfully"})
 
 }
