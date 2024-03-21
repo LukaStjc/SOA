@@ -16,9 +16,13 @@ func init() {
 }
 
 func main() {
+
 	r := gin.Default()
+
 	r.POST("/signup", controllers.SignUp)
 	r.GET("/validate", middleware.RequireAuth, controllers.Validate)
+	r.PUT("/ban/:username", middleware.CheckIfAdmin, controllers.BlockUser)
+	r.POST("/follow/:username", middleware.RequireAuth, controllers.Follow)
 
 	r.Run()
 

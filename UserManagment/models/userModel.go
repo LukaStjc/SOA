@@ -26,11 +26,12 @@ func (role UserRole) String() string {
 // Struktura User predstavlja korisnika.
 type User struct {
 	gorm.Model
-	// ID       uuid.UUID `json:"id"`
-	Username string   `json:"username" gorm:"not null;type:string"`
+	Username string   `json:"username" ;unique;gorm:"not null;type:string"`
 	Password string   `json:"password" gorm:"not null;type:string"`
 	Email    string   `json:"email" gorm:"not null;type:string"`
 	Role     UserRole `json:"role"`
+	Blocked  bool     `json:"blocked" gorm:"default:false"`
+	Follows  []*User  `gorm:"many2many:user_follows;"`
 }
 
 // func (user *User) BeforeCreate(scope *gorm.DB) error {
