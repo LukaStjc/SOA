@@ -4,6 +4,7 @@ import (
 	"database-example/model"
 	"database-example/repo"
 	"fmt"
+	"net/http"
 )
 
 type BlogService struct {
@@ -35,10 +36,25 @@ func (service *BlogService) CreateBlog(blog *model.Blog) error {
 	//DODATI proveru da li je korisnik blokiran
 	//ako nije, moze da napravi blog
 
-	err := service.BlogRepo.Create(blog)
+	url := fmt.Sprintf("http://localhost:3000/is-blocked/%d", blog.UserID)
 
-	if err != nil {
-		return err
+	// Then make the POST request using the constructed URL
+	resp, err1 := http.Post(url, "application/json", nil)
+	if err1 != nil {
+		return err1
+	}
+	defer resp.Body.Close()
+
+	// Check the response status code
+	if resp.StatusCode != http.StatusOK {
+		return nil
+	}
+
+	//user nije blokiran
+	err2 := service.BlogRepo.Create(blog)
+
+	if err2 != nil {
+		return err2
 	}
 
 	return nil

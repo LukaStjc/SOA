@@ -5,10 +5,8 @@ import (
 	"database-example/model"
 	"database-example/repo"
 	"database-example/service"
-	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
 	"gorm.io/driver/postgres"
@@ -27,7 +25,6 @@ func initDB() *gorm.DB {
 
 	database.AutoMigrate(&model.Student{})
 	database.AutoMigrate(&model.Blog{})
-	database.AutoMigrate(&model.User{})
 	database.AutoMigrate(&model.Comment{})
 
 	// ODKOMENTARISATI LINIJE "database.Exec" KOJE NEMAS SACUVANE U BAZI
@@ -44,13 +41,13 @@ func initDB() *gorm.DB {
 
 	//database.Exec("insert into users values ('7cd3e72c-79fc-4866-af17-5dd26f19ad85', 'Perica')")
 
-	publishDate2 := time.Date(2024, time.March, 19, 12, 0, 0, 0, time.Local)
-	query2 := fmt.Sprintf("insert into comments values ('2e998703-78dd-4076-8cf4-b8bb7e19e500', "+ // id
-		"'7cd3e72c-79fc-4866-af17-5dd26f19ad85', "+ // user id
-		"'33686a82-6686-4d40-99b3-f0736c2bc7f4', "+ // blog id
-		"'%s', 'I personaly think that all chineese phones are trash', '%s')", // publish date, text, last change date
-		publishDate2.Format("2006-01-02 15:04:05"), publishDate2.Format("2006-01-02 15:04:05"))
-	database.Exec(query2)
+	// publishDate2 := time.Date(2024, time.March, 19, 12, 0, 0, 0, time.Local)
+	// query2 := fmt.Sprintf("insert into comments values ('2e998703-78dd-4076-8cf4-b8bb7e19e500', "+ // id
+	// 	"'7cd3e72c-79fc-4866-af17-5dd26f19ad85', "+ // user id
+	// 	"'33686a82-6686-4d40-99b3-f0736c2bc7f4', "+ // blog id
+	// 	"'%s', 'I personaly think that all chineese phones are trash', '%s')", // publish date, text, last change date
+	// 	publishDate2.Format("2006-01-02 15:04:05"), publishDate2.Format("2006-01-02 15:04:05"))
+	// database.Exec(query2)
 
 	return database
 }
