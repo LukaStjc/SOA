@@ -5,6 +5,7 @@ import (
 	"database-example/model"
 	"database-example/repo"
 	"database-example/service"
+
 	"log"
 	"net/http"
 
@@ -34,16 +35,15 @@ func initDB() *gorm.DB {
 
 	// publishDate := time.Date(2024, time.March, 18, 12, 0, 0, 0, time.Local)
 	// query := fmt.Sprintf("insert into blogs values ('33686a82-6686-4d40-99b3-f0736c2bc7f4', "+ // id
+	// 	"2, "+ // user id
 	// 	"'Is xiaomi a good phone?', "+ // title
 	// 	"'Everyone is buying a xiaomi phone nowadays, so Im wondering if they are actually worth buying and how long they last', "+ // description
 	// 	"'%s', '%d')", publishDate.Format("2006-01-02 15:04:05"), model.BlogStatus(1)) // publish date, status
 	// database.Exec(query)
 
-	//database.Exec("insert into users values ('7cd3e72c-79fc-4866-af17-5dd26f19ad85', 'Perica')")
-
 	// publishDate2 := time.Date(2024, time.March, 19, 12, 0, 0, 0, time.Local)
 	// query2 := fmt.Sprintf("insert into comments values ('2e998703-78dd-4076-8cf4-b8bb7e19e500', "+ // id
-	// 	"'7cd3e72c-79fc-4866-af17-5dd26f19ad85', "+ // user id
+	// 	"3, "+ // user id
 	// 	"'33686a82-6686-4d40-99b3-f0736c2bc7f4', "+ // blog id
 	// 	"'%s', 'I personaly think that all chineese phones are trash', '%s')", // publish date, text, last change date
 	// 	publishDate2.Format("2006-01-02 15:04:05"), publishDate2.Format("2006-01-02 15:04:05"))
@@ -52,11 +52,12 @@ func initDB() *gorm.DB {
 	return database
 }
 
-func startServer(handler *handler.StudentHandler) {
+func startServer( /*handler *handler.StudentHandler,*/ handler1 *handler.BlogHandler) {
 	router := mux.NewRouter().StrictSlash(true)
 
-	router.HandleFunc("/students/{id}", handler.Get).Methods("GET")
-	router.HandleFunc("/students", handler.Create).Methods("POST")
+	// router.HandleFunc("/students/{id}", handler.Get).Methods("GET")
+	// router.HandleFunc("/students", handler.Create).Methods("POST")
+	router.HandleFunc("/blogs/create", handler1.CreateBlog).Methods("POST")
 
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
 	println("Server starting")
@@ -69,9 +70,13 @@ func main() {
 		print("FAILED TO CONNECT TO DB")
 		return
 	}
-	repo := &repo.StudentRepository{DatabaseConnection: database}
-	service := &service.StudentService{StudentRepo: repo}
-	handler := &handler.StudentHandler{StudentService: service}
+	// repo := &repo.StudentRepository{DatabaseConnection: database}
+	// service := &service.StudentService{StudentRepo: repo}
+	// handler := &handler.StudentHandler{StudentService: service}
 
-	startServer(handler)
+	repo1 := &repo.BlogRepository{DatabaseConnection: database}
+	service1 := &service.BlogService{BlogRepo: repo1}
+	handler1 := &handler.BlogHandler{BlogService: service1}
+
+	startServer( /*handler,*/ handler1)
 }

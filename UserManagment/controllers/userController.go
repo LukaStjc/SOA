@@ -7,6 +7,7 @@ import (
 	"go-userm/initializers"
 	"go-userm/models"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -201,6 +202,7 @@ func Follow(c *gin.Context) {
 }
 
 func IsBlocked(c *gin.Context) {
+	fmt.Printf("Usao u is blocked")
 	// Immediately return if the previous middleware aborted the request
 	if c.IsAborted() {
 		return
@@ -208,6 +210,10 @@ func IsBlocked(c *gin.Context) {
 	// Extracting the user id from the path
 
 	userId := c.Param("id")
+	fmt.Printf("Zabo u atoiu")
+	userIdAsNum, _ := strconv.Atoi(userId)
+
+	fmt.Printf("Id usera je %d", userIdAsNum)
 
 	// Find the user by id
 	var user models.User

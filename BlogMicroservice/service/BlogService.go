@@ -35,12 +35,17 @@ func (service *BlogService) FindCommentById(id string) (*model.Comment, error) {
 func (service *BlogService) CreateBlog(blog *model.Blog) error {
 	//DODATI proveru da li je korisnik blokiran
 	//ako nije, moze da napravi blog
+	fmt.Printf("Usao u servis")
 
-	url := fmt.Sprintf("http://localhost:3000/is-blocked/%d", blog.UserID)
+	//url := fmt.Sprintf("http://localhost:3000/is-blocked/%d", blog.UserID)
+	url := fmt.Sprintf("http://localhost:3000/is-blocked/3")
 
 	// Then make the POST request using the constructed URL
-	resp, err1 := http.Post(url, "application/json", nil)
+	resp, err1 := http.Get(url)
+	fmt.Printf("\nPosle poziva njihovog ms")
+
 	if err1 != nil {
+		fmt.Printf("\nEror jbg")
 		return err1
 	}
 	defer resp.Body.Close()
@@ -51,6 +56,7 @@ func (service *BlogService) CreateBlog(blog *model.Blog) error {
 	}
 
 	//user nije blokiran
+	fmt.Printf("Pre ulaska u repo %s", blog.Title)
 	err2 := service.BlogRepo.Create(blog)
 
 	if err2 != nil {

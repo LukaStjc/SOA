@@ -4,6 +4,7 @@ import (
 	"database-example/model"
 	"database-example/service"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -47,6 +48,8 @@ func (handler *BlogHandler) GetComment(writer http.ResponseWriter, req *http.Req
 func (handler *BlogHandler) CreateBlog(writer http.ResponseWriter, req *http.Request) {
 	var blog model.Blog
 	err := json.NewDecoder(req.Body).Decode(&blog)
+
+	fmt.Print("Usao u handler")
 
 	if err != nil {
 		println("Error while parsing json")
