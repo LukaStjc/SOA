@@ -52,12 +52,13 @@ func initDB() *gorm.DB {
 	return database
 }
 
-func startServer( /*handler *handler.StudentHandler,*/ handler1 *handler.BlogHandler) {
+func startServer( /*handler *handler.StudentHandler,*/ handler1 *handler.BlogHandler, handler2 *handler.BlogHandler) {
 	router := mux.NewRouter().StrictSlash(true)
 
 	// router.HandleFunc("/students/{id}", handler.Get).Methods("GET")
 	// router.HandleFunc("/students", handler.Create).Methods("POST")
 	router.HandleFunc("/blogs/create", handler1.CreateBlog).Methods("POST")
+	router.HandleFunc("/comments/create", handler2.CreateComment).Methods("POST")
 
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
 	println("Server starting")
@@ -78,5 +79,9 @@ func main() {
 	service1 := &service.BlogService{BlogRepo: repo1}
 	handler1 := &handler.BlogHandler{BlogService: service1}
 
-	startServer( /*handler,*/ handler1)
+	repo2 := &repo.CommentRepository{DatabaseConnection: database}
+	service2 := &service.BlogService{CommentRepo: repo2}
+	handler2 := &handler.BlogHandler{BlogService: service2}
+
+	startServer( /*handler,*/ handler1, handler2)
 }

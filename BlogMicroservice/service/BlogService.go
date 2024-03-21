@@ -4,7 +4,6 @@ import (
 	"database-example/model"
 	"database-example/repo"
 	"fmt"
-	"net/http"
 )
 
 type BlogService struct {
@@ -35,28 +34,27 @@ func (service *BlogService) FindCommentById(id string) (*model.Comment, error) {
 func (service *BlogService) CreateBlog(blog *model.Blog) error {
 	//DODATI proveru da li je korisnik blokiran
 	//ako nije, moze da napravi blog
-	fmt.Printf("Usao u servis")
+	// fmt.Printf("Usao u servis")
 
-	//url := fmt.Sprintf("http://localhost:3000/is-blocked/%d", blog.UserID)
-	url := fmt.Sprintf("http://localhost:3000/is-blocked/3")
+	// url := fmt.Sprintf("http://localhost:3000/is-blocked/%d", blog.UserID)
 
-	// Then make the POST request using the constructed URL
-	resp, err1 := http.Get(url)
-	fmt.Printf("\nPosle poziva njihovog ms")
+	// // Then make the POST request using the constructed URL
+	// resp, err1 := http.Get(url)
+	// fmt.Printf("\nPosle poziva njihovog ms")
 
-	if err1 != nil {
-		fmt.Printf("\nEror jbg")
-		return err1
-	}
-	defer resp.Body.Close()
+	// if err1 != nil {
+	// 	fmt.Printf("\nEror neki")
+	// 	return err1
+	// }
+	// defer resp.Body.Close()
 
-	// Check the response status code
-	if resp.StatusCode != http.StatusOK {
-		return nil
-	}
+	// // Check the response status code
+	// if resp.StatusCode != http.StatusOK {
+	// 	return nil
+	// }
 
-	//user nije blokiran
-	fmt.Printf("Pre ulaska u repo %s", blog.Title)
+	// //user nije blokiran
+	// fmt.Printf("Pre ulaska u repo %s", blog.Title)
 	err2 := service.BlogRepo.Create(blog)
 
 	if err2 != nil {
@@ -71,6 +69,41 @@ func (service *BlogService) CreateComment(comment *model.Comment) error {
 	//DODATI proveru da li korisnik prati kreatora bloga na kom hoce da ostavi komentar
 	//ako ga prati i nije blokiran, moze da ostavi/napravi komentar
 
+	// url := fmt.Sprintf("http://localhost:3000/is-blocked/%d", comment.UserID)
+
+	// // Then make the GET request using the constructed URL
+	// resp, err1 := http.Get(url)
+
+	// if err1 != nil {
+	// 	return err1
+	// }
+	// defer resp.Body.Close()
+
+	// // Check the response status code
+	// if resp.StatusCode != http.StatusOK {
+	// 	return nil
+	// }
+
+	// //user nije blokiran
+
+	// blog, _ := service.BlogRepo.FindById(comment.BlogID.String())
+
+	// url := fmt.Sprintf("http://localhost:3000/does-follow/%d/%d", comment.UserID, blog.UserID)
+
+	// // Then make the GET request using the constructed URL
+	// resp1, err3 := http.Get(url)
+
+	// if err3 != nil {
+	// 	return err3
+	// }
+	// defer resp1.Body.Close()
+
+	// // Check the response status code
+	// if resp1.StatusCode != http.StatusOK {
+	// 	return nil
+	// }
+
+	// comment creator follows blog creator
 	err := service.CommentRepo.Create(comment)
 
 	if err != nil {
