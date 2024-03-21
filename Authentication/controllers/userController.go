@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"go-jwt/initializers"
 	"go-jwt/models"
 	"net/http"
@@ -14,16 +13,12 @@ import (
 )
 
 func SignUp(c *gin.Context) {
-	/// Get the username/pass of req body
 	var body struct {
 		ID       uint
 		Username string
 		Password string
 		Role     uint8
 	}
-
-	fmt.Println("body")
-	fmt.Println(body)
 
 	if c.Bind(&body) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -33,7 +28,6 @@ func SignUp(c *gin.Context) {
 		return
 	}
 
-	// Create the user
 	user := models.User{ID: body.ID, Username: body.Username, Password: body.Password, Role: uint8(body.Role)}
 	result := initializers.DB.Create(&user)
 
@@ -45,12 +39,10 @@ func SignUp(c *gin.Context) {
 		return
 	}
 
-	// Respond
 	c.JSON(http.StatusOK, gin.H{})
 }
 
 func Login(c *gin.Context) {
-	// Get the username and pass of req body
 	var body struct {
 		Username string
 		Password string
@@ -64,7 +56,6 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Look up requested user
 	var user models.User
 	initializers.DB.First(&user, "username = ?", body.Username)
 
@@ -76,7 +67,6 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Compare sent in pass with saved user pass hash
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 
 	if err != nil {
@@ -87,7 +77,6 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Generate a jwt token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub":  user.ID, // subject
 		"role": user.Role,
