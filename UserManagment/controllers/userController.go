@@ -220,12 +220,12 @@ func IsBlocked(c *gin.Context) {
 
 	// Check if user is blocked
 	if user.Blocked {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "User is already blocked"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "User is blocked"})
 		return
 	}
 
 	// If user is not blocked send ok status
-	c.JSON(http.StatusOK, gin.H{"message": "User blocked successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "User is not blocked"})
 
 }
 
@@ -260,12 +260,12 @@ func DoesFollow(c *gin.Context) {
 	// Check if follower follows blog creator
 	for _, u := range follower.Follows {
 		if u.ID == creator.ID {
-			c.JSON(http.StatusOK, gin.H{"message": "Follower follows blog creator."})
+			c.JSON(http.StatusOK, gin.H{"message": "Follower follows blog creator"})
 			return
 		}
 	}
 
 	// If follower doesn't follow blog creator send bad request status
-	c.JSON(http.StatusBadRequest, gin.H{"message": "User blocked successfully"})
+	c.JSON(http.StatusBadRequest, gin.H{"message": "Follower doesn't follow blog creator"})
 
 }
