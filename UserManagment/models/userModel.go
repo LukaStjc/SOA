@@ -9,7 +9,7 @@ type UserRole int
 
 // Definisanje konstanti za uloge korisnika.
 const (
-	Guide UserRole = iota
+	Guide UserRole = iota + 1
 	Tourist
 	Administrator
 )
@@ -26,9 +26,9 @@ func (role UserRole) String() string {
 // Struktura User predstavlja korisnika.
 type User struct {
 	gorm.Model
-	Username string   `json:"username" ;unique;gorm:"not null;type:string"`
+	Username string   `json:"username" gorm:"unique;not null;type:string"`
 	Password string   `json:"password" gorm:"not null;type:string"`
-	Email    string   `json:"email" gorm:"not null;type:string"`
+	Email    string   `json:"email" gorm:"unique;not null;type:string"`
 	Role     UserRole `json:"role"`
 	Blocked  bool     `json:"blocked" gorm:"default:false"`
 	Follows  []*User  `gorm:"many2many:user_follows;"`
