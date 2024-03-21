@@ -7,14 +7,13 @@ import (
 	"go-userm/initializers"
 	"go-userm/models"
 	"net/http"
+	"regexp"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// TODO: validations
 func SignUp(c *gin.Context) {
-	// Get the username/pass/email/role of req body
 	var body struct {
 		Username string
 		Password string
@@ -29,7 +28,42 @@ func SignUp(c *gin.Context) {
 		return
 	}
 
-	// Hash the password
+	if body.Email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Email cannot be empty",
+		})
+		return
+	}
+
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	if !emailRegex.MatchString(body.Email) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid email format",
+		})
+		return
+	}
+
+	if body.Role.String() == "Unknown" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Role is not correct or can not be empty",
+		})
+		return
+	}
+
+	if body.Password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Password cannot be empty",
+		})
+		return
+	}
+
+	if body.Username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Username cannot be empty",
+		})
+		return
+	}
+
 	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -38,10 +72,8 @@ func SignUp(c *gin.Context) {
 		return
 	}
 
-	// Begin a transaction
 	tx := initializers.DB.Begin()
 
-	// Create the user
 	user := models.User{
 		Username: body.Username,
 		Password: string(hash),
@@ -50,15 +82,13 @@ func SignUp(c *gin.Context) {
 	}
 
 	if err := tx.Create(&user).Error; err != nil {
-		// If an error occurs, rollback the transaction
 		tx.Rollback()
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to create user",
+			"error": "Failed to create user. The log is: " + err.Error(),
 		})
 		return
 	}
 
-	// Prepare the request body
 	requestBody, err := json.Marshal(map[string]interface{}{
 		"ID":       user.ID,
 		"Username": body.Username,
@@ -72,9 +102,7 @@ func SignUp(c *gin.Context) {
 		})
 		return
 	}
-	fmt.Println("JSON Spreman: ", body.Role.String())
 
-	// Send the request
 	resp, err := http.Post("http://localhost:3001/signup", "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
 		tx.Rollback()
@@ -85,7 +113,6 @@ func SignUp(c *gin.Context) {
 	}
 	defer resp.Body.Close()
 
-	// Check the response status code
 	if resp.StatusCode != http.StatusOK {
 		tx.Rollback()
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -95,7 +122,6 @@ func SignUp(c *gin.Context) {
 		return
 	}
 
-	// Commit the transaction
 	if err := tx.Commit().Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to commit transaction",
@@ -103,7 +129,6 @@ func SignUp(c *gin.Context) {
 		return
 	}
 
-	// Respond
 	c.JSON(http.StatusOK, gin.H{})
 }
 
