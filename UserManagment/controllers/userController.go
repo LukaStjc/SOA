@@ -199,3 +199,73 @@ func Follow(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "User followed successfully"})
 
 }
+
+func IsBlocked(c *gin.Context) {
+	// Immediately return if the previous middleware aborted the request
+	if c.IsAborted() {
+		return
+	}
+	// Extracting the user id from the path
+
+	userId := c.Param("id")
+
+	// Find the user by id
+	var user models.User
+	result := initializers.DB.Where("id = ?", userId).First(&user)
+
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Check if user is blocked
+	if user.Blocked {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "User is already blocked"})
+		return
+	}
+
+	// If user is not blocked send ok status
+	c.JSON(http.StatusOK, gin.H{"message": "User blocked successfully"})
+
+}
+
+func DoesFollow(c *gin.Context) {
+	// Immediately return if the previous middleware aborted the request
+	if c.IsAborted() {
+		return
+	}
+	// Extracting the followers id and creators id from the path
+
+	followerId := c.Param("followerId")
+	creatorId := c.Param("creatorId")
+
+	// Find the follower by id
+	var follower models.User
+	result1 := initializers.DB.Where("id = ?", followerId).First(&follower)
+
+	// Find the creator by username
+	var creator models.User
+	result2 := initializers.DB.Where("id = ?", creatorId).First(&creator)
+
+	if result1.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User (follower) not found"})
+		return
+	}
+
+	if result2.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User (creator) not found"})
+		return
+	}
+
+	// Check if follower follows blog creator
+	for _, u := range follower.Follows {
+		if u.ID == creator.ID {
+			c.JSON(http.StatusOK, gin.H{"message": "Follower follows blog creator."})
+			return
+		}
+	}
+
+	// If follower doesn't follow blog creator send bad request status
+	c.JSON(http.StatusBadRequest, gin.H{"message": "User blocked successfully"})
+
+}
