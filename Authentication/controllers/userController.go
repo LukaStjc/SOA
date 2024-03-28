@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"go-jwt/initializers"
 	"go-jwt/models"
 	"net/http"
@@ -97,4 +98,65 @@ func Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"token": tokenString,
 	})
+}
+
+func Authenticate(c *gin.Context) {
+	tokenString := c.GetHeader("Authorization")
+	if tokenString == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token not found"})
+		return
+	}
+
+	// Assuming the token is sent as "Bearer <token>"
+	tokenString = tokenString[len("Bearer "):]
+
+	// Parse the JWT token
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		secret := os.Getenv("SECRET")
+		if secret == "" {
+			// Handle missing secret key
+			return nil, fmt.Errorf("secret key not set")
+		}
+		return []byte(secret), nil
+	})
+
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		return
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		// Assuming a "sub" claim to identify the user
+		sub, ok := claims["sub"].(float64)
+		fmt.Println("token", tokenString)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+			return
+		}
+
+		// Find the user by the "sub" claim
+		var user models.User
+		result := initializers.DB.First(&user, "id = ?", sub)
+		if result.Error != nil || user.ID == 0 {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+			return
+		}
+
+		// Optionally check if the token is expired
+		if exp, ok := claims["exp"].(float64); ok {
+			if time.Now().Unix() > int64(exp) {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Token is expired"})
+				return
+			}
+		}
+
+		// Token is valid, and the user is found, proceed with your logic
+		// For example, returning user information or a success message
+		c.JSON(http.StatusOK, user)
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+	}
 }
