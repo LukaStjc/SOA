@@ -2,3 +2,5 @@
 *.exe
 UserManagment/go-userm.exe
 UserManagment/go-userm.exe~
+Authentication/go-jwt.exe
+UserManagment/go-userm.exe
