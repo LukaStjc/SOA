@@ -57,17 +57,7 @@ func (handler *BlogHandler) CreateBlog(writer http.ResponseWriter, req *http.Req
 		return
 	}
 
-	// TOKEN
-	authHeader := req.Header.Get("Authorization")
-	if authHeader == "" {
-		println("Missing Authorization header")
-		writer.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	authToken := authHeader[len("Bearer "):]
-	fmt.Println("Auth Token:", authToken)
-
-	err = handler.BlogService.CreateBlog(&blog, authToken)
+	err = handler.BlogService.CreateBlog(&blog)
 
 	if err != nil {
 		println("Error while creating a new blog")
