@@ -2,9 +2,11 @@ package middleware
 
 import (
 	"encoding/json"
+	"fmt"
 	"go-userm/initializers"
 	"go-userm/models"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,7 +19,10 @@ func RequireAuth(c *gin.Context) {
 		return
 	}
 
-	req, err := http.NewRequest("POST", "http://localhost:3001/authenticate", nil)
+	port := os.Getenv("AUTHENTICATION_PORT")
+	url := fmt.Sprintf("http://localhost:%s/authenticate", port)
+
+	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error creating authentication request"})
 		return
@@ -34,7 +39,17 @@ func RequireAuth(c *gin.Context) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+		var respError map[string]interface{}
+		if err := json.NewDecoder(resp.Body).Decode(&respError); err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error decoding authentication service response"})
+		}
+
+		if errorMsg, ok := respError["error"].(string); ok && errorMsg != "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": errorMsg})
+		} else {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authentication failed"})
+		}
+
 		return
 	}
 
@@ -49,7 +64,8 @@ func RequireAuth(c *gin.Context) {
 		return
 	}
 
-	var fullyInitializedUser models.User // iz auth mikroservisa imam samo atributa, ovde inicijalizujem sve ostale
+	// iz auth mikroservisa imam samo atributa, ovde inicijalizujem sve ostale
+	var fullyInitializedUser models.User
 	result := initializers.DB.First(&fullyInitializedUser, "id = ?", user.ID)
 	if result.Error != nil || fullyInitializedUser.ID == 0 {
 		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found in database"})
