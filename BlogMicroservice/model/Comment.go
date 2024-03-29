@@ -18,5 +18,7 @@ type Comment struct {
 
 func (comment *Comment) BeforeCreate(scope *gorm.DB) error {
 	comment.ID = uuid.New()
+	comment.PublishDate = time.Now()
+	comment.LastModificationDate = time.Now()
 	return nil
 }
