@@ -20,7 +20,7 @@ func (role UserRole) String() string {
 	if role < Guide || role > Administrator {
 		return "Unknown"
 	}
-	return names[role]
+	return names[role-1]
 }
 
 // Struktura User predstavlja korisnika.
