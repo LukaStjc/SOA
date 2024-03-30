@@ -1,0 +1,114 @@
+version: "3.7"
+
+
+
+services:
+  blog-service:
+    build:
+      context: .
+      dockerfile: ./BlogService/Dockerfile
+    image: blog-service
+    container_name: blog-service
+    restart: on-failure
+    ports:
+      - ${BLOG_SERVICE_PORT}:${BLOG_SERVICE_PORT}
+    environment:
+      USER_SERVICE_DOMAIN: ${USER_SERVICE_DOMAIN} 
+      USER_SERVICE_PORT: ${USER_SERVICE_PORT}
+      BLOG_DB_PORT: ${USER_DB_PORT}
+      BLOG_DB_HOST: ${USER_DB_HOST}
+      PORT: ${BLOG_SERVICE_PORT}
+    networks:
+      - servers
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./AuthenticationService/Dockerfile
+    image: auth-service
+    container_name: auth-service
+    restart: on-failure
+    ports:
+     - ${AUTHENTICATION_SERVICE_PORT}:${AUTHENTICATION_SERVICE_PORT}
+    environment:
+      AUTHENTIFICATION_DB_PORT: ${AUTHENTIFICATION_DB_PORT}
+      AUTHENTIFICATION_DB_HOST: ${AUTHENTIFICATION_DB_HOST}
+      PORT: ${AUTHENTICATION_SERVICE_PORT}
+      SECRET: ${SECRET}
+    networks:
+      - servers
+    depends_on:
+      postgres-db-auth:
+        condition: service_healthy
+
+  user-service:
+    build:
+      context: .
+      dockerfile: ./UserService/Dockerfile
+    image: user-service
+    container_name: user-service
+    restart: on-failure
+    ports:
+     - ${USER_SERVICE_PORT}:${USER_SERVICE_PORT}
+    environment:
+      AUTHENTICATION_SERVICE_DOMAIN: ${AUTHENTICATION_SERVICE_DOMAIN} 
+      AUTHENTICATION_SERVICE_PORT: ${AUTHENTICATION_SERVICE_PORT}
+      USER_DB_PORT: ${USER_DB_PORT}
+      USER_DB_HOST: ${USER_DB_HOST}
+      PORT: ${USER_SERVICE_PORT}
+      SECRET: ${SECRET}
+    networks:
+      - servers
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+  
+  postgres-db:   #SOA baza
+    image: postgres
+    restart: on-failure
+    networks:
+      - servers
+    ports:
+      - ${USER_DB_EXTERNAL_PORT}:5432 
+    environment:
+      POSTGRES_DB: SOA     
+      POSTGRES_USER: postgres          
+      POSTGRES_PASSWORD: ftn
+    volumes:
+      - database-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]  # Check if PostgreSQL is ready
+      interval: 10s  # Check every 10 seconds
+      retries: 5  # Retry 5 times before considering it unhealthy
+
+  postgres-db-auth:   #SOA_auth baza
+    image: postgres
+    restart: on-failure
+    networks:
+      - servers
+    ports:
+      - ${AUTHENTIFICATION_DB_EXTERNAL_PORT}:5432 
+    environment:
+      POSTGRES_DB: SOA_auth     
+      POSTGRES_USER: postgres          
+      POSTGRES_PASSWORD: ftn
+    volumes:
+      - database-data-auth:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]  # Check if PostgreSQL is ready
+      interval: 10s  # Check every 10 seconds
+      retries: 5  # Retry 5 times before considering it unhealthy
+
+volumes:
+  database-data:
+    name: server-database
+  database-data-auth:
+    name: server-database-auth
+
+networks:
+  servers:
+    name: servers
+    driver: bridge
