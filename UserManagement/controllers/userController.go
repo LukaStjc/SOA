@@ -134,15 +134,29 @@ func SignUp(c *gin.Context) {
 }
 
 func Validate(c *gin.Context) {
-	user, _ := c.Get("user")
 
 	// ako hoces da dobavis neko polje usera
 	// onda zapocinjes komandu na sledeci nacin
 	// user.(models.User).
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": user,
-	})
+	userInterface, _ := c.Get("user")
+
+	// NE SME *models.User!
+	user, _ := userInterface.(models.User)
+
+	if user.Role.String() == "Administrator" {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Administrator Content.",
+		})
+	} else if user.Role.String() == "Guide" {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Guide Content.",
+		})
+	} else {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Tourist Content.",
+		})
+	}
 }
 
 func BlockUser(c *gin.Context) {

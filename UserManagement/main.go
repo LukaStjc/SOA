@@ -19,6 +19,8 @@ func main() {
 
 	r := gin.Default()
 
+	r.Use(middleware.CORSMiddleware())
+
 	r.POST("/signup", controllers.SignUp)
 
 	// RequireAuth
