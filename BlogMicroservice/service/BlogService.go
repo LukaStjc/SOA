@@ -4,6 +4,7 @@ import (
 	"database-example/model"
 	"database-example/repo"
 	"fmt"
+	"net/http"
 )
 
 type BlogService struct {
@@ -31,38 +32,38 @@ func (service *BlogService) FindCommentById(id string) (*model.Comment, error) {
 	return &comment, nil
 }
 
-func (service *BlogService) CreateBlog(blog *model.Blog) error {
-	//DODATI proveru da li je korisnik blokiran
-	//ako nije, moze da napravi blog
-	// fmt.Printf("Usao u servis")
+// func (service *BlogService) CreateBlog(blog *model.Blog) error {
+//DODATI proveru da li je korisnik blokiran
+//ako nije, moze da napravi blog
+// fmt.Printf("Usao u servis")
 
-	// url := fmt.Sprintf("http://localhost:3000/is-blocked/%d", blog.UserID)
+// url := fmt.Sprintf("http://localhost:3000/is-blocked/%d", blog.UserID)
 
-	// // Then make the POST request using the constructed URL
-	// resp, err1 := http.Get(url)
-	// fmt.Printf("\nPosle poziva njihovog ms")
+// // Then make the POST request using the constructed URL
+// resp, err1 := http.Get(url)
+// fmt.Printf("\nPosle poziva njihovog ms")
 
-	// if err1 != nil {
-	// 	fmt.Printf("\nEror neki")
-	// 	return err1
-	// }
-	// defer resp.Body.Close()
+// if err1 != nil {
+// 	fmt.Printf("\nEror neki")
+// 	return err1
+// }
+// defer resp.Body.Close()
 
-	// // Check the response status code
-	// if resp.StatusCode != http.StatusOK {
-	// 	return nil
-	// }
+// // Check the response status code
+// if resp.StatusCode != http.StatusOK {
+// 	return nil
+// }
 
-	// //user nije blokiran
-	// fmt.Printf("Pre ulaska u repo %s", blog.Title)
-	err2 := service.BlogRepo.Create(blog)
+// //user nije blokiran
+// fmt.Printf("Pre ulaska u repo %s", blog.Title)
+// 	err2 := service.BlogRepo.Create(blog)
 
-	if err2 != nil {
-		return err2
-	}
+// 	if err2 != nil {
+// 		return err2
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func (service *BlogService) CreateComment(comment *model.Comment) error {
 	//DODATI proveru da li je korisnik blokiran
@@ -107,6 +108,42 @@ func (service *BlogService) CreateComment(comment *model.Comment) error {
 	err := service.CommentRepo.Create(comment)
 
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (service *BlogService) CreateBlog(blog *model.Blog, authToken string) error {
+	// Construct the URL for checking if the user is blocked
+	url := fmt.Sprintf("http://localhost:3000/is-blocked/%d", blog.UserID) // Adjust the URL as needed
+
+	// Create a new HTTP request with the appropriate method, URL, and request body (nil for GET request)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		fmt.Printf("Error creating request: %v\n", err)
+		return err
+	}
+
+	// Set the Authorization header with the provided auth token
+	req.Header.Set("Authorization", "Bearer "+authToken)
+
+	// Send the HTTP request using http.DefaultClient
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Printf("Error sending request: %v\n", err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("user is blocked or other error occurred, status code: %d", resp.StatusCode)
+	}
+
+	fmt.Printf("Pre ulaska u repo %s", blog.Title)
+	err = service.BlogRepo.Create(blog)
+	if err != nil {
+		fmt.Printf("Error creating blog: %v\n", err)
 		return err
 	}
 
