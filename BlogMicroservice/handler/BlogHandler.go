@@ -49,8 +49,6 @@ func (handler *BlogHandler) CreateBlog(writer http.ResponseWriter, req *http.Req
 	var blog model.Blog
 	err := json.NewDecoder(req.Body).Decode(&blog)
 
-	fmt.Print("Usao u handler")
-
 	if err != nil {
 		println("Error while parsing json")
 		writer.WriteHeader(http.StatusBadRequest)

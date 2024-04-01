@@ -2,7 +2,6 @@ package repo
 
 import (
 	"database-example/model"
-	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -24,11 +23,7 @@ func (repo *BlogRepository) FindById(id string) (model.Blog, error) {
 
 func (repo *BlogRepository) Create(blog *model.Blog) error {
 
-	fmt.Printf("pocetak kreiranja %s", blog.Title)
-
 	dbResult := repo.DatabaseConnection.Create(blog)
-
-	fmt.Println("Kreiran")
 
 	if dbResult.Error != nil {
 		return dbResult.Error

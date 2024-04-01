@@ -68,7 +68,7 @@ func (service *BlogService) FindCommentById(id string) (*model.Comment, error) {
 
 func (service *BlogService) CreateBlog(blog *model.Blog, authToken string) error {
 	// Construct the URL for checking if the user is blocked
-	url := "http://localhost:3000/is-blocked/30" // Adjust the URL as needed
+	url := fmt.Sprintf("http://localhost:3000/is-blocked/%d", blog.UserID) // Adjust the URL as needed
 
 	// Create a new HTTP request with the appropriate method, URL, and request body (nil for GET request)
 	req, err := http.NewRequest("GET", url, nil)
