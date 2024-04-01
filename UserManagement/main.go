@@ -23,6 +23,8 @@ func main() {
 
 	r.POST("/signup", controllers.SignUp)
 
+	r.GET("/:id", controllers.GetById)
+
 	// RequireAuth
 	r.GET("/validate", middleware.RequireAuth, controllers.Validate)
 	r.POST("/follow/:username", middleware.RequireAuth, controllers.Follow)

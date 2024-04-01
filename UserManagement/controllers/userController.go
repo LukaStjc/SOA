@@ -314,3 +314,18 @@ func DoesFollow(c *gin.Context) {
 	c.JSON(http.StatusBadRequest, gin.H{"message": "Follower doesn't follow blog creator"})
 
 }
+
+func GetById(c *gin.Context) {
+	// Find the user by id
+	id := c.Param("id")
+	var user models.User
+	result := initializers.DB.First(&user, id)
+	if result.Error != nil {
+		// If user not found, return a 404 Not Found response
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+	// If user found, return user data in JSON format
+	c.JSON(http.StatusOK, user)
+
+}
