@@ -98,3 +98,29 @@ func (handler *BlogHandler) CreateComment(writer http.ResponseWriter, req *http.
 	writer.WriteHeader(http.StatusCreated)
 	writer.Header().Set("Content-Type", "application/json")
 }
+
+func (handler *BlogHandler) GetAllCommentsByBlogId(writer http.ResponseWriter, req *http.Request) {
+	blogs, err := handler.BlogService.FindAllBlogsByBlogId()
+	writer.Header().Set("Content-Type", "application/json")
+
+	if err != nil {
+		writer.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	json.NewEncoder(writer).Encode(blogs)
+}
+
+func (handler *BlogHandler) FindAllBlogs(writer http.ResponseWriter, req *http.Request) {
+	blogs, err := handler.BlogService.FindAllBlogs()
+	writer.Header().Set("Content-Type", "application/json")
+
+	if err != nil {
+		writer.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	json.NewEncoder(writer).Encode(blogs)
+}

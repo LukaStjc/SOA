@@ -31,3 +31,14 @@ func (repo *CommentRepository) Create(comment *model.Comment) error {
 	println("Rows affected: ", dbResult.RowsAffected)
 	return nil
 }
+
+func (repo *CommentRepository) FindByBlogId(blogId string) ([]model.Comment, error) {
+	var comments []model.Comment
+	dbResult := repo.DatabaseConnection.Find(&comments, "blog_id = ?", blogId)
+
+	if dbResult.Error != nil {
+		return nil, dbResult.Error
+	}
+
+	return comments, nil
+}
