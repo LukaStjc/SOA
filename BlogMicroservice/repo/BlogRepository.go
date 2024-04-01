@@ -37,3 +37,14 @@ func (repo *BlogRepository) Create(blog *model.Blog) error {
 	println("Rows affected: ", dbResult.RowsAffected)
 	return nil
 }
+
+func (repo *BlogRepository) FindAll() ([]model.Blog, error) {
+	var blogs []model.Blog
+	dbResult := repo.DatabaseConnection.Find(&blogs)
+
+	if dbResult != nil {
+		return blogs, dbResult.Error
+	}
+
+	return blogs, nil
+}

@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -59,10 +60,18 @@ func startServer( /*handler *handler.StudentHandler,*/ handler1 *handler.BlogHan
 	// router.HandleFunc("/students", handler.Create).Methods("POST")
 	router.HandleFunc("/blogs/create", handler1.CreateBlog).Methods("POST")
 	router.HandleFunc("/comments/create", handler2.CreateComment).Methods("POST")
+	router.HandleFunc("/feed", handler1.FindAllBlogs).Methods("GET")
+	//router.HandleFunc("/getbyblogid", handler1.GetAllCommentsByBlogId).Methods("GET") NE RADI
 
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
 	println("Server starting")
-	log.Fatal(http.ListenAndServe(":8081", router))
+	log.Fatal(http.ListenAndServe(":8081",
+		handlers.CORS(
+			handlers.AllowedOrigins([]string{"*"}),
+			handlers.AllowedMethods([]string{"GET", "POST", "PUT", "OPTIONS"}),
+			handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
+		)(router)))
+
 }
 
 func main() {

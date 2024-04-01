@@ -112,3 +112,22 @@ func (service *BlogService) CreateComment(comment *model.Comment) error {
 
 	return nil
 }
+
+func (service *BlogService) FindAllBlogsByBlogId() ([]model.Comment, error) {
+	blogId := "33686a82-6686-4d40-99b3-f0736c2bc7f4"
+	comments, err := service.CommentRepo.FindByBlogId(blogId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve comments: %v", err)
+	}
+
+	return comments, nil
+
+}
+
+func (service *BlogService) FindAllBlogs() ([]model.Blog, error) {
+	blogs, err := service.BlogRepo.FindAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve blogs: %v", err)
+	}
+	return blogs, nil
+}
