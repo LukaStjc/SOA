@@ -53,25 +53,30 @@ func initDB() *gorm.DB {
 	return database
 }
 
-func startServer( /*handler *handler.StudentHandler,*/ handler1 *handler.BlogHandler, handler2 *handler.BlogHandler) {
+func startServer(handler1 *handler.BlogHandler, handler2 *handler.BlogHandler) {
 	router := mux.NewRouter().StrictSlash(true)
 
-	// router.HandleFunc("/students/{id}", handler.Get).Methods("GET")
-	// router.HandleFunc("/students", handler.Create).Methods("POST")
+	// Define CORS options
+	corsOptions := handlers.CORS(
+		handlers.AllowedOrigins([]string{"*"}),
+		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "OPTIONS"}),
+		handlers.AllowedHeaders([]string{"Access-Control-Allow-Origin", "Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"}),
+	)
+
+	// Apply CORS middleware
+	router.Use(corsOptions)
+
+	// Define routes
 	router.HandleFunc("/blogs/create", handler1.CreateBlog).Methods("POST")
 	router.HandleFunc("/comments/create", handler2.CreateComment).Methods("POST")
 	router.HandleFunc("/feed", handler1.FindAllBlogs).Methods("GET")
-	//router.HandleFunc("/getbyblogid", handler1.GetAllCommentsByBlogId).Methods("GET") NE RADI
 
+	// Serve static files
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
-	println("Server starting")
-	log.Fatal(http.ListenAndServe(":8081",
-		handlers.CORS(
-			handlers.AllowedOrigins([]string{"*"}),
-			handlers.AllowedMethods([]string{"GET", "POST", "PUT", "OPTIONS"}),
-			handlers.AllowedHeaders([]string{"Access-Control-Allow-Origin", "Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"}),
-		)(router)))
 
+	// Start server
+	println("Server starting")
+	log.Fatal(http.ListenAndServe(":8081", router))
 }
 
 func main() {

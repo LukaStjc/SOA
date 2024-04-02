@@ -35,6 +35,8 @@ func main() {
 	// RequireAuth + CheckIfAdmin
 	r.PUT("/ban/:username", middleware.RequireAuth, middleware.CheckIfAdmin, controllers.BlockUser)
 
+	r.GET("/get-followed", middleware.RequireAuth, controllers.GetFollowed)
+
 	r.Run()
 
 }

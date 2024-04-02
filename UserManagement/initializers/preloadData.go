@@ -43,6 +43,18 @@ func PreloadUsers() {
 			// password: "pass"
 			Password: "$2a$10$uDfTToyGNwFY6HZsbSnveeR7FW7UhRvk7IHP8KGsvvbHbRlXjZmca",
 			Email:    "pavle@gmail.com",
+			Role:     models.UserRole(1),
+		},
+		{
+			Model: gorm.Model{
+				CreatedAt: time.Date(2024, 3, 19, 16, 58, 7, 81778000, time.FixedZone("CET", 1*3600)),
+				UpdatedAt: time.Date(2024, 3, 19, 16, 58, 7, 81778000, time.FixedZone("CET", 1*3600)),
+				DeletedAt: gorm.DeletedAt{Valid: false},
+			},
+			Username: "admin123",
+			// password: "pass"
+			Password: "$2a$10$uDfTToyGNwFY6HZsbSnveeR7FW7UhRvk7IHP8KGsvvbHbRlXjZmca",
+			Email:    "admin@gmail.com",
 			Role:     models.UserRole(3),
 		},
 	}

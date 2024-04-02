@@ -173,7 +173,7 @@ func BlockUser(c *gin.Context) {
 	result := initializers.DB.Where("username = ?", username).First(&user)
 
 	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not founddddd"})
 		return
 	}
 	if user.Role.String() == "Administrator" {
@@ -206,7 +206,7 @@ func Follow(c *gin.Context) {
 	result := initializers.DB.Where("username = ?", username).First(&newUser)
 
 	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not founddddd"})
 		return
 	}
 
@@ -259,7 +259,7 @@ func IsBlocked(c *gin.Context) {
 	result := initializers.DB.Where("id = ?", userId).First(&user)
 
 	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not foundddd"})
 		return
 	}
 
@@ -318,16 +318,44 @@ func DoesFollow(c *gin.Context) {
 }
 
 func GetById(c *gin.Context) {
+
 	// Find the user by id
 	id := c.Param("id")
 	var user models.User
 	result := initializers.DB.First(&user, id)
 	if result.Error != nil {
 		// If user not found, return a 404 Not Found response
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not founddasdd"})
 		return
 	}
 	// If user found, return user data in JSON format
 	c.JSON(http.StatusOK, user)
 
+}
+
+func GetFollowed(c *gin.Context) {
+	// Retrieve the authenticated user from the context
+	// Immediately return if the previous middleware aborted the request
+	if c.IsAborted() {
+		return
+	}
+	userInterface, _ := c.Get("user")
+
+	// NE SME *models.User!
+	user, _ := userInterface.(models.User)
+
+	// Preload the Follows relationship
+	result := initializers.DB.Preload("Follows").First(&user, user.ID)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve followed users"})
+		return
+	}
+
+	// Extract the list of followed users
+	followedUserIDs := make([]int, len(user.Follows))
+	for i, followedUser := range user.Follows {
+		followedUserIDs[i] = int(followedUser.ID)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"followed_user_ids": followedUserIDs})
 }

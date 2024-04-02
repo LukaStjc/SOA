@@ -60,7 +60,7 @@ func RequireAuth(c *gin.Context) {
 	}
 
 	if user.ID == 0 {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User not foundddd"})
 		return
 	}
 

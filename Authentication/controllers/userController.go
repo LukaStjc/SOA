@@ -145,7 +145,8 @@ func Authenticate(c *gin.Context) {
 
 		if exp, ok := claims["exp"].(float64); ok {
 			if time.Now().Unix() > int64(exp) {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "Token is expired"})
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"error": "Token is expired"})
 				return
 			}
 		}

@@ -27,6 +27,13 @@ func PreloadUsers() {
 			Password: "$2a$10$uDfTToyGNwFY6HZsbSnveeR7FW7UhRvk7IHP8KGsvvbHbRlXjZmca",
 			Role:     3,
 		},
+		{
+			ID:       4,
+			Username: "admin123",
+			// password: "pass"
+			Password: "$2a$10$uDfTToyGNwFY6HZsbSnveeR7FW7UhRvk7IHP8KGsvvbHbRlXjZmca",
+			Role:     3,
+		},
 	}
 
 	for _, u := range users {
