@@ -286,9 +286,10 @@ func DoesFollow(c *gin.Context) {
 
 	// Find the follower by id
 	var follower models.User
-	result1 := initializers.DB.Where("id = ?", followerId).First(&follower)
+	//result1 := initializers.DB.Where("id = ?", followerId).First(&follower)
+	result1 := initializers.DB.Preload("Follows").Where("id = ?", followerId).First(&follower)
 
-	// Find the creator by username
+	// Find the creator by id
 	var creator models.User
 	result2 := initializers.DB.Where("id = ?", creatorId).First(&creator)
 
@@ -305,14 +306,15 @@ func DoesFollow(c *gin.Context) {
 	// Check if follower follows blog creator
 	for _, u := range follower.Follows {
 		if u.ID == creator.ID {
-			c.JSON(http.StatusOK, gin.H{"message": "Follower follows blog creator"})
+			//c.JSON(http.StatusOK, gin.H{"message": "Follower follows blog creator"})
+			c.JSON(http.StatusOK, gin.H{"follows": true})
 			return
 		}
 	}
 
 	// If follower doesn't follow blog creator send bad request status
-	c.JSON(http.StatusBadRequest, gin.H{"message": "Follower doesn't follow blog creator"})
-
+	//c.JSON(http.StatusBadRequest, gin.H{"message": "Follower doesn't follow blog creator"})
+	c.JSON(http.StatusOK, gin.H{"follows": false})
 }
 
 func GetById(c *gin.Context) {
