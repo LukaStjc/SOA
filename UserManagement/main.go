@@ -30,6 +30,7 @@ func main() {
 	r.POST("/follow/:username", middleware.RequireAuth, controllers.Follow)
 	r.GET("/is-blocked/:id", middleware.RequireAuth, controllers.IsBlocked)
 	r.GET("/does-follow/:followerId/:creatorId", middleware.RequireAuth, controllers.DoesFollow)
+	//r.GET("/does-follow/:creatorId", middleware.RequireAuth, controllers.DoesFollow)
 
 	// RequireAuth + CheckIfAdmin
 	r.PUT("/ban/:username", middleware.RequireAuth, middleware.CheckIfAdmin, controllers.BlockUser)
