@@ -5,6 +5,8 @@ import (
 	"database-example/repo"
 	"fmt"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 type BlogService struct {
@@ -151,15 +153,9 @@ func (service *BlogService) CreateBlog(blog *model.Blog, authToken string) error
 
 }
 
-func (service *BlogService) FindAllBlogsByBlogId() ([]model.Comment, error) {
-	blogId := "33686a82-6686-4d40-99b3-f0736c2bc7f4"
-	comments, err := service.CommentRepo.FindByBlogId(blogId)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve comments: %v", err)
-	}
-
-	return comments, nil
-
+// In your BlogService
+func (service *BlogService) FindAllCommentsByBlogId(blogId uuid.UUID) ([]model.Comment, error) {
+	return service.CommentRepo.FindByBlogId(blogId)
 }
 
 func (service *BlogService) FindAllBlogs() ([]model.Blog, error) {
@@ -168,4 +164,8 @@ func (service *BlogService) FindAllBlogs() ([]model.Blog, error) {
 		return nil, fmt.Errorf("failed to retrieve blogs: %v", err)
 	}
 	return blogs, nil
+}
+
+func (service *BlogService) GetAllComments() ([]model.Comment, error) {
+	return service.CommentRepo.GetAllComments()
 }

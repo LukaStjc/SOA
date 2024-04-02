@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -99,17 +100,23 @@ func (handler *BlogHandler) CreateComment(writer http.ResponseWriter, req *http.
 	writer.Header().Set("Content-Type", "application/json")
 }
 
-func (handler *BlogHandler) GetAllCommentsByBlogId(writer http.ResponseWriter, req *http.Request) {
-	blogs, err := handler.BlogService.FindAllBlogsByBlogId()
-	writer.Header().Set("Content-Type", "application/json")
-
+func (handler *BlogHandler) GetAllCommentsByBlogId(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	blogIdStr := vars["blogId"] // Ensure you're using "github.com/gorilla/mux" and have a route variable named "blogId"
+	blogId, err := uuid.Parse(blogIdStr)
 	if err != nil {
-		writer.WriteHeader(http.StatusNotFound)
+		http.Error(w, "Invalid Blog ID format", http.StatusBadRequest)
 		return
 	}
 
-	writer.WriteHeader(http.StatusOK)
-	json.NewEncoder(writer).Encode(blogs)
+	comments, err := handler.BlogService.FindAllCommentsByBlogId(blogId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(comments)
 }
 
 func (handler *BlogHandler) FindAllBlogs(writer http.ResponseWriter, req *http.Request) {
@@ -123,4 +130,15 @@ func (handler *BlogHandler) FindAllBlogs(writer http.ResponseWriter, req *http.R
 
 	writer.WriteHeader(http.StatusOK)
 	json.NewEncoder(writer).Encode(blogs)
+}
+
+func (handler *BlogHandler) GetAllComments(w http.ResponseWriter, r *http.Request) {
+	comments, err := handler.BlogService.GetAllComments()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(comments)
 }
