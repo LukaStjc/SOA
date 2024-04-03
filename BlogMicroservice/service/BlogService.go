@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 )
 
@@ -67,12 +68,48 @@ func (service *BlogService) FindCommentById(id string) (*model.Comment, error) {
 // 	return nil
 // }
 
-func (service *BlogService) CreateComment(comment *model.Comment) error {
-	//DODATI proveru da li je korisnik blokiran
-	//DODATI proveru da li korisnik prati kreatora bloga na kom hoce da ostavi komentar
-	//ako ga prati i nije blokiran, moze da ostavi/napravi komentar
-
+func (service *BlogService) CreateComment(comment *model.Comment, authToken string) error {
+	fmt.Printf("\nUsao u comment servis")
+	// provera da li je korisnik blokiran
 	// url := fmt.Sprintf("http://localhost:3000/is-blocked/%d", comment.UserID)
+	url := "http://localhost:3000/is-blocked/2"
+
+	comment.UserID, _ = extractUserIDFromToken(authToken)
+	comment.UserID = 2
+
+	fmt.Printf("User ID received from payload: %d\n", comment.UserID)
+
+	// Create a new HTTP request with the appropriate method, URL, and request body (nil for GET request)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		fmt.Printf("Error creating request: %v\n", err)
+		return err
+	}
+
+	// Set the Authorization header with the provided auth token
+	req.Header.Set("Authorization", "Bearer "+authToken)
+
+	// Send the HTTP request using http.DefaultClient
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Printf("Error sending request: %v\n", err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("user is blocked or other error occurred, status code: %d", resp.StatusCode)
+	}
+
+	fmt.Printf("\nNije blokiran korisnik")
+
+	// provera da li korisnik prati kreatora bloga na kom hoce da ostavi komentar
+
+	//var blog model.Blog
+	//blog := find
+	//url = fmt.Sprintf("http://localhost:3000/does-follow/%d/%d", comment.UserID, )
+
+	//ako ga prati i nije blokiran, moze da ostavi/napravi komentar
 
 	// // Then make the GET request using the constructed URL
 	// resp, err1 := http.Get(url)
@@ -107,7 +144,8 @@ func (service *BlogService) CreateComment(comment *model.Comment) error {
 	// }
 
 	// comment creator follows blog creator
-	err := service.CommentRepo.Create(comment)
+
+	err = service.CommentRepo.Create(comment)
 
 	if err != nil {
 		return err
@@ -118,7 +156,14 @@ func (service *BlogService) CreateComment(comment *model.Comment) error {
 
 func (service *BlogService) CreateBlog(blog *model.Blog, authToken string) error {
 	// Construct the URL for checking if the user is blocked
-	url := fmt.Sprintf("http://localhost:3000/is-blocked/%d", blog.UserID) // Adjust the URL as needed
+	// url := fmt.Sprintf("http://localhost:3000/is-blocked/%d", blog.UserID) // Adjust the URL as needed
+	url := "http://localhost:3000/is-blocked/2" // Adjust the URL as needed
+	// fmt.Printf("\nId usera koji pravi blog je %d", blog.UserID)
+
+	blog.UserID, _ = extractUserIDFromToken(authToken)
+	blog.UserID = 2
+
+	fmt.Printf("User ID received from payload: %d\n", blog.UserID)
 
 	// Create a new HTTP request with the appropriate method, URL, and request body (nil for GET request)
 	req, err := http.NewRequest("GET", url, nil)
@@ -151,6 +196,34 @@ func (service *BlogService) CreateBlog(blog *model.Blog, authToken string) error
 
 	return nil
 
+}
+
+func extractUserIDFromToken(authToken string) (int, error) {
+	// Parse the JWT token
+	token, err := jwt.Parse(authToken, func(token *jwt.Token) (interface{}, error) {
+		// Validate the token signature here if needed
+		return []byte("your-secret-key"), nil
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	// Extract claims from the token
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return 0, fmt.Errorf("invalid token claims")
+	}
+
+	// Access user ID from the claims
+	userIDFloat, ok := claims["user"].(float64)
+	if !ok {
+		return 0, fmt.Errorf("user ID not found in token")
+	}
+
+	// Convert user ID to int
+	userID := int(userIDFloat)
+
+	return userID, nil
 }
 
 // In your BlogService

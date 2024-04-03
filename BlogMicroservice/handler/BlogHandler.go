@@ -50,6 +50,8 @@ func (handler *BlogHandler) CreateBlog(writer http.ResponseWriter, req *http.Req
 	var blog model.Blog
 	err := json.NewDecoder(req.Body).Decode(&blog)
 
+	// fmt.Printf("User ID received from payload: %d\n", blog.UserID)
+
 	if err != nil {
 		println("Error while parsing json")
 		writer.WriteHeader(http.StatusBadRequest)
@@ -82,13 +84,25 @@ func (handler *BlogHandler) CreateComment(writer http.ResponseWriter, req *http.
 	var comment model.Comment
 	err := json.NewDecoder(req.Body).Decode(&comment)
 
+	fmt.Printf("\nUser id %d blog id %v text %s", comment.UserID, comment.BlogID, comment.Text)
+
 	if err != nil {
 		println("Error while parsing json")
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	err = handler.BlogService.CreateComment(&comment)
+	// TOKEN
+	authHeader := req.Header.Get("Authorization")
+	if authHeader == "" {
+		println("Missing Authorization header")
+		writer.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	authToken := authHeader[len("Bearer "):]
+	fmt.Println("Auth Token:", authToken)
+
+	err = handler.BlogService.CreateComment(&comment, authToken)
 
 	if err != nil {
 		println("Error while creating a new comment")
