@@ -71,11 +71,7 @@ func (service *BlogService) FindCommentById(id string) (*model.Comment, error) {
 func (service *BlogService) CreateComment(comment *model.Comment, authToken string) error {
 	fmt.Printf("\nUsao u comment servis")
 	// provera da li je korisnik blokiran
-	// url := fmt.Sprintf("http://localhost:3000/is-blocked/%d", comment.UserID)
-	url := "http://localhost:3000/is-blocked/2"
-
-	comment.UserID, _ = extractUserIDFromToken(authToken)
-	comment.UserID = 2
+	url := fmt.Sprintf("http://localhost:3000/is-blocked/%d", comment.UserID)
 
 	fmt.Printf("User ID received from payload: %d\n", comment.UserID)
 
@@ -156,12 +152,8 @@ func (service *BlogService) CreateComment(comment *model.Comment, authToken stri
 
 func (service *BlogService) CreateBlog(blog *model.Blog, authToken string) error {
 	// Construct the URL for checking if the user is blocked
-	// url := fmt.Sprintf("http://localhost:3000/is-blocked/%d", blog.UserID) // Adjust the URL as needed
-	url := "http://localhost:3000/is-blocked/2" // Adjust the URL as needed
-	// fmt.Printf("\nId usera koji pravi blog je %d", blog.UserID)
-
-	blog.UserID, _ = extractUserIDFromToken(authToken)
-	blog.UserID = 2
+	url := fmt.Sprintf("http://localhost:3000/is-blocked/%d", blog.UserID) // Adjust the URL as needed
+	fmt.Printf("\nId usera koji pravi blog je %d", blog.UserID)
 
 	fmt.Printf("User ID received from payload: %d\n", blog.UserID)
 

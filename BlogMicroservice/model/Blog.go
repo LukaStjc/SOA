@@ -17,7 +17,7 @@ const (
 
 type Blog struct {
 	ID          uuid.UUID  `json:"id"`
-	UserID      int        `json:"user id" gorm:"type:int;foreignKey:UserID"`
+	UserID      int        `json:"userId" gorm:"type:int;foreignKey:UserID"`
 	Title       string     `json:"title" gorm:"not null;type:string"`
 	Description string     `json:"description" gorm:"not null;type:text"`
 	PublishDate time.Time  `json:"publish date" gorm:"not null;type:timestamp"`
