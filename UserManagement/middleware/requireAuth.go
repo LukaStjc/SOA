@@ -6,7 +6,6 @@ import (
 	"go-userm/initializers"
 	"go-userm/models"
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,8 +18,11 @@ func RequireAuth(c *gin.Context) {
 		return
 	}
 
-	port := os.Getenv("AUTHENTICATION_PORT")
-	url := fmt.Sprintf("http://localhost:%s/authenticate", port)
+	// port := os.Getenv("AUTHENTICATION_PORT")
+	// url := fmt.Sprintf("http://auth_service:3001/authenticate")
+	url := "http://auth_service:3001/authenticate"
+
+	// log.Println("Authenticating at port:", port) // Change to log
 
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {

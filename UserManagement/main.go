@@ -4,13 +4,15 @@ import (
 	"go-userm/controllers"
 	"go-userm/initializers"
 	"go-userm/middleware"
+	configurations "go-userm/startup"
 
 	"github.com/gin-gonic/gin"
 )
 
 func init() {
-	initializers.LoadEnvVariables()
-	initializers.ConnectToDb()
+	configuration := configurations.NewConfigurations()
+	// initializers.LoadEnvVariables()
+	initializers.ConnectToDb(configuration)
 	initializers.SyncDatabase()
 	initializers.PreloadUsers()
 }
