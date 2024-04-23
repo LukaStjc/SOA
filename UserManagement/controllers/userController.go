@@ -104,7 +104,7 @@ func SignUp(c *gin.Context) {
 		return
 	}
 
-	resp, err := http.Post("http://localhost:3001/signup", "application/json", bytes.NewBuffer(requestBody))
+	resp, err := http.Post("http://auth-service:3001/signup", "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
 		tx.Rollback()
 		c.JSON(http.StatusBadRequest, gin.H{
