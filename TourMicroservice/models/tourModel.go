@@ -6,23 +6,21 @@ import (
 	"gorm.io/gorm"
 )
 
-// UserRole predstavlja ulogu korisnika.
 type TourType int
 
-// Definisanje konstanti za uloge korisnika.
 const (
 	Easy TourType = iota + 1
 	Moderate
 	Hard
 )
 
-// Struktura User predstavlja korisnika.
 type Tour struct {
 	gorm.Model
 	Name        string   `json:"name" gorm:"not null;type:string"`
 	Description string   `json:"description" gorm:"not null;type:string"`
 	Type        TourType `json:"type"`
 	Tags        string   `json:"tags" gorm:"type:string"`
+	Price       float64  `json:"price"`
 }
 
 func (t *Tour) AddTag(tag string) {
