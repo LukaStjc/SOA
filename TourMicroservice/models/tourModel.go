@@ -21,6 +21,7 @@ type Tour struct {
 	Type        TourType `json:"type"`
 	Tags        string   `json:"tags" gorm:"type:string"`
 	Price       float64  `json:"price"`
+	UserID      uint     `json:"userId" gorm:"type:uint;foreignKey:UserID"`
 }
 
 func (t *Tour) AddTag(tag string) {

@@ -12,6 +12,7 @@ func PreloadTours() {
 			Type:        models.TourType(1),
 			Tags:        "susanj;bar",
 			Price:       2500.55,
+			UserID:      1,
 		},
 		{
 			Name:        "tura2",
@@ -19,6 +20,7 @@ func PreloadTours() {
 			Type:        models.TourType(2),
 			Tags:        "zlatibor;cajetina",
 			Price:       3500.35,
+			UserID:      1,
 		},
 	}
 
