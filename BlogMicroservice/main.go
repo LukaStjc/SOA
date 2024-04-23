@@ -5,6 +5,8 @@ import (
 	"database-example/model"
 	"database-example/repo"
 	"database-example/service"
+	configurations "database-example/startup"
+	"fmt"
 
 	"log"
 	"net/http"
@@ -15,9 +17,13 @@ import (
 	"gorm.io/gorm"
 )
 
-func initDB() *gorm.DB {
+// func initDB() *gorm.DB {
+func initDB(config *configurations.Configurations) *gorm.DB {
 	//connectionStr := "root:root@tcp(localhost:3306)/students?charset=utf8mb4&parseTime=True&loc=Local"
-	connectionParams := "user=postgres password=ftn dbname=SOA host=localhost port=5432 sslmode=disable"
+	// connectionParams := "user=postgres password=ftn dbname=SOA host=localhost port=5432 sslmode=disable"
+	// database, err := gorm.Open(postgres.Open(connectionParams), &gorm.Config{})
+
+	connectionParams := fmt.Sprintf("user=postgres password=ftn dbname=SOA host=%s port=%s sslmode=disable", config.BlogDBHost, config.BlogDBPort)
 	database, err := gorm.Open(postgres.Open(connectionParams), &gorm.Config{})
 
 	if err != nil {
@@ -87,7 +93,8 @@ func startServer( /*handler *handler.StudentHandler,*/ handler1 *handler.BlogHan
 }
 
 func main() {
-	database := initDB()
+	configuration := configurations.NewConfigurations()
+	database := initDB(configuration)
 	if database == nil {
 		print("FAILED TO CONNECT TO DB")
 		return

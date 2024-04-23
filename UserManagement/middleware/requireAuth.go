@@ -19,8 +19,8 @@ func RequireAuth(c *gin.Context) {
 		return
 	}
 
-	port := os.Getenv("AUTHENTICATION_PORT")
-	url := fmt.Sprintf("http://localhost:%s/authenticate", port)
+	port := os.Getenv("AUTHENTICATION_SERVICE_PORT")
+	url := fmt.Sprintf("http://auth-service:%s/authenticate", port)
 
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
