@@ -102,6 +102,27 @@ services:
       interval: 10s  # Check every 10 seconds
       retries: 5  # Retry 5 times before considering it unhealthy
    
+  tour-service:
+    build:
+      context: .
+      dockerfile: ./TourMicroservice/Dockerfile
+    image: tour-service
+    container_name: tour-service
+    restart: on-failure
+    ports:
+      - ${TOUR_SERVICE_PORT}:${TOUR_SERVICE_PORT}
+    environment:
+      USER_SERVICE_DOMAIN: ${USER_SERVICE_DOMAIN} 
+      USER_SERVICE_PORT: ${USER_SERVICE_PORT}
+      TOUR_DB_PORT: ${USER_DB_PORT}
+      TOUR_DB_HOST: ${USER_DB_HOST}
+      PORT: ${TOUR_SERVICE_PORT}
+    networks:
+      - servers
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
   adminer:   
     image: adminer
     restart: always
