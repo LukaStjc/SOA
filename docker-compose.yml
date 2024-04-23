@@ -101,6 +101,14 @@ services:
       test: ["CMD-SHELL", "pg_isready -U postgres"]  # Check if PostgreSQL is ready
       interval: 10s  # Check every 10 seconds
       retries: 5  # Retry 5 times before considering it unhealthy
+   
+  adminer:   
+    image: adminer
+    restart: always
+    ports:
+      - "8089:8080"   
+    networks:
+      - servers  
 
 volumes:
   database-data:
