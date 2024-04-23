@@ -15,6 +15,8 @@ func PreloadUsers() {
 				UpdatedAt: time.Date(2024, 3, 19, 16, 57, 29, 351794000, time.FixedZone("CET", 1*3600)),
 				DeletedAt: gorm.DeletedAt{Valid: false},
 			},
+
+			ID:       1,
 			Username: "darko123",
 			// password: "pass"
 			Password: "$2a$10$H6NBU8YNijGecCR6.iI1VucLMW76/2a40MAazaZrQpdEdg9YzCrUq",
@@ -27,6 +29,7 @@ func PreloadUsers() {
 				UpdatedAt: time.Date(2024, 3, 19, 16, 58, 7, 81778000, time.FixedZone("CET", 1*3600)),
 				DeletedAt: gorm.DeletedAt{Valid: false},
 			},
+			ID:       2,
 			Username: "marko123",
 			// password: "pass"
 			Password: "$2a$10$uDfTToyGNwFY6HZsbSnveeR7FW7UhRvk7IHP8KGsvvbHbRlXjZmca",
@@ -39,6 +42,7 @@ func PreloadUsers() {
 				UpdatedAt: time.Date(2024, 3, 19, 16, 58, 7, 81778000, time.FixedZone("CET", 1*3600)),
 				DeletedAt: gorm.DeletedAt{Valid: false},
 			},
+			ID:       3,
 			Username: "pavle123",
 			// password: "pass"
 			Password: "$2a$10$uDfTToyGNwFY6HZsbSnveeR7FW7UhRvk7IHP8KGsvvbHbRlXjZmca",
@@ -51,6 +55,7 @@ func PreloadUsers() {
 				UpdatedAt: time.Date(2024, 3, 19, 16, 58, 7, 81778000, time.FixedZone("CET", 1*3600)),
 				DeletedAt: gorm.DeletedAt{Valid: false},
 			},
+			ID:       4,
 			Username: "admin123",
 			// password: "pass"
 			Password: "$2a$10$uDfTToyGNwFY6HZsbSnveeR7FW7UhRvk7IHP8KGsvvbHbRlXjZmca",

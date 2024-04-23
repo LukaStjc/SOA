@@ -74,8 +74,6 @@ func RequireAuth(c *gin.Context) {
 
 	c.Set("user", fullyInitializedUser)
 
-	fmt.Println(fullyInitializedUser.Email)
-
 	c.Next()
 }
 

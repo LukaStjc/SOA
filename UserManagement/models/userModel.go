@@ -26,6 +26,7 @@ func (role UserRole) String() string {
 // Struktura User predstavlja korisnika.
 type User struct {
 	gorm.Model
+	ID       uint     `gorm:"primaryKey"` // Explicitly declare the ID field as the primary key
 	Username string   `json:"username" gorm:"unique;not null;type:string"`
 	Password string   `json:"password" gorm:"not null;type:string"`
 	Email    string   `json:"email" gorm:"unique;not null;type:string"`

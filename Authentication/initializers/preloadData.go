@@ -25,7 +25,8 @@ func PreloadUsers() {
 			Username: "pavle123",
 			// password: "pass"
 			Password: "$2a$10$uDfTToyGNwFY6HZsbSnveeR7FW7UhRvk7IHP8KGsvvbHbRlXjZmca",
-			Role:     3,
+			// Pavle nije admin!
+			Role: 1,
 		},
 		{
 			ID:       4,
