@@ -58,7 +58,6 @@ func CreateTour(c *gin.Context) {
 }
 
 func GetToursByUser(c *gin.Context) {
-
 	userIDStr := c.Param("id")
 	userID, err := strconv.ParseUint(userIDStr, 10, 64)
 	if err != nil {
@@ -67,7 +66,7 @@ func GetToursByUser(c *gin.Context) {
 	}
 
 	var tours []models.Tour
-	result := initializers.DB.Where("user_id = ?", userID).Find(&tours)
+	result := initializers.DB.Preload("KeyPoints").Where("user_id = ?", userID).Find(&tours)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch tours"})
 		return
