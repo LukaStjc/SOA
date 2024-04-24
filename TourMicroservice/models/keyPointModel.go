@@ -14,7 +14,6 @@ import (
 
 type KeyPoint struct {
 	gorm.Model
-	Name      string  `json:"name"`
 	Longitude float64 `json:"longitude"`
 	Latitude  float64 `json:"latitude"`
 	TourID    int     `json:"tourId" gorm:"type:int;foreignKey:TourID"`

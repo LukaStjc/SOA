@@ -40,25 +40,21 @@ func PreloadTours() {
 func PreloadKeyPoints() {
 	var keyPoints = []models.KeyPoint{
 		{
-			Name:      "Pocetna",
 			Longitude: 42.1,
 			Latitude:  19.1,
 			TourID:    1,
 		},
 		{
-			Name:      "Poslednja",
 			Longitude: 42.1,
 			Latitude:  19.9,
 			TourID:    1,
 		},
 		{
-			Name:      "Pocetna",
 			Longitude: 43.734520,
 			Latitude:  19.64,
 			TourID:    2,
 		},
 		{
-			Name:      "Poslednja",
 			Longitude: 43.734520,
 			Latitude:  19.693140,
 			TourID:    2,
