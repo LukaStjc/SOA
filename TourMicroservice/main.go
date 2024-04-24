@@ -25,6 +25,7 @@ func main() {
 	r.Use(middleware.CORSMiddleware())
 
 	r.POST("/create-tour", controllers.CreateTour)
+	r.GET("/guide/:id/tours", controllers.GetToursByUser)
 	r.Run()
 
 }
