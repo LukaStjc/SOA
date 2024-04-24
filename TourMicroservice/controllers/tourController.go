@@ -13,11 +13,11 @@ func CreateTour(c *gin.Context) {
 	var body struct {
 		Name        string            `json:"name"`
 		Description string            `json:"description"`
-		Type        models.TourType   `json:"type"`
+		Type        uint              `json:"type"`
 		Tags        string            `json:"tags"`
 		Price       float64           `json:"price"`
 		UserID      uint              `json:"userId"`
-		KeyPoints   []models.KeyPoint `json:"keyPoints"` // Add this line
+		KeyPoints   []models.KeyPoint `json:"keyPoints"`
 	}
 
 	if err := c.BindJSON(&body); err != nil {
@@ -30,7 +30,7 @@ func CreateTour(c *gin.Context) {
 	tour := models.Tour{
 		Name:        body.Name,
 		Description: body.Description,
-		Type:        body.Type,
+		Type:        models.TourType(body.Type),
 		Tags:        body.Tags,
 		Price:       body.Price,
 		UserID:      body.UserID,
@@ -44,9 +44,8 @@ func CreateTour(c *gin.Context) {
 		return
 	}
 
-	// Create keypoints if any are provided
 	for _, kp := range body.KeyPoints {
-		kp.TourID = int(tour.ID) // Ensure the foreign key is set correctly
+		kp.TourID = int(tour.ID)
 		if kpResult := initializers.DB.Create(&kp); kpResult.Error != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "Failed to create keypoints",
@@ -74,6 +73,5 @@ func GetToursByUser(c *gin.Context) {
 		return
 	}
 
-	// Return the tours
 	c.JSON(http.StatusOK, gin.H{"tours": tours})
 }
