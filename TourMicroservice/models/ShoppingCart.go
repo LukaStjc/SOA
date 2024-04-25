@@ -6,7 +6,7 @@ import (
 
 type ShoppingCart struct {
 	gorm.Model
-	OrderItems []uint  `json:"orderItems" gorm:"type:uint;foreignKey:OrderItemID"`
-	UserID     uint    `json:"userId" gorm:"type:uint;foreignKey:UserID"`
-	Price      float64 `json:"price"`
+	OrderItems []*OrderItem `gorm:"many2many:orderItem_in_shoppingCart;"`
+	UserID     uint         `json:"userId" gorm:"type:uint;foreignKey:UserID"`
+	Price      float64      `json:"price"`
 }

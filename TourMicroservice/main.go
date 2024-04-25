@@ -28,7 +28,8 @@ func main() {
 	r.GET("/guide/:id/tours", controllers.GetToursByUser)
 
 	r.POST("/create-shoppingCart", controllers.CreateShoppingCart)
-	r.PUT("/clear-shoppingCart", controllers.ClearShoppingCart)
+	r.PUT("/clear-shoppingCart/:id", controllers.ClearShoppingCart)
+	r.PUT("/addToShoppingCart/:tourId/:shoppingCartId/:numOfPeople", controllers.AddToShoppingCart)
 	r.Run()
 
 }

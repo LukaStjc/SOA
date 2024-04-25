@@ -9,5 +9,5 @@ type OrderItem struct {
 	TourId         uint    `json:"tourId" gorm:"type:uint;foreignKey:TourID"`
 	TourName       string  `json:"tourName" gorm:"type:string"`
 	TourPrice      float64 `json:"tourPrice"`
-	NumberOfPeople uint    `json:"numberOfPeople"`
+	NumberOfPeople int     `json:"numberOfPeople"`
 }
