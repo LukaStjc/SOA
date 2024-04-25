@@ -3,28 +3,30 @@ package controllers
 import (
 	"go-tourm/initializers"
 	"go-tourm/models"
+
 	"net/http"
 	"strconv"
+
+	//usermodels "github.com/LukaStjc/SOA/UserManagement/models"
 
 	"github.com/gin-gonic/gin"
 )
 
+/* ODKOMENTARISI KAD NAMESTIS IMPORT USER MODELA
 func CreateShoppingCart(c *gin.Context) {
-
-	var body struct {
-		UserID uint `json:"userId"`
-	}
-
-	if err := c.BindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to read body",
-		})
+	// Immediately return if the previous middleware aborted the request
+	if c.IsAborted() {
 		return
 	}
 
+	userInterface, _ := c.Get("user")
+
+	// NE SME *models.User!
+	user, _ := userInterface.(usermodels.User)
+
 	//na pocetku nema orderItems
 	shoppingCart := models.ShoppingCart{
-		UserID: body.UserID,
+		UserID: user.ID,
 		Price:  0, //cena je na pocetku 0
 	}
 
@@ -37,7 +39,7 @@ func CreateShoppingCart(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"data": shoppingCart})
-}
+}*/
 
 func ClearShoppingCart(c *gin.Context) {
 	// Immediately return if the previous middleware aborted the request
@@ -65,6 +67,11 @@ func ClearShoppingCart(c *gin.Context) {
 }
 
 func AddToShoppingCart(c *gin.Context) {
+	// Immediately return if the previous middleware aborted the request
+	if c.IsAborted() {
+		return
+	}
+
 	// Extracting the Tour id from the path
 	tourId := c.Param("tourId")
 
@@ -109,6 +116,11 @@ func AddToShoppingCart(c *gin.Context) {
 }
 
 func RemoveFromShoppingCart(c *gin.Context) {
+	// Immediately return if the previous middleware aborted the request
+	if c.IsAborted() {
+		return
+	}
+
 	// Extracting the orderItem id from the path
 	orderItemId := c.Param("orderItemId")
 
@@ -153,3 +165,46 @@ func RemoveFromShoppingCart(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"shoppingCart": shoppingCart})
 }
+
+/* ODKOMENTARISI KAD NAMESTIS IMPORT USER MODELA
+func Checkout(c *gin.Context) {
+	// Immediately return if the previous middleware aborted the request
+	if c.IsAborted() {
+		return
+	}
+
+	userInterface, _ := c.Get("user")
+
+	// NE SME *models.User!
+	user, _ := userInterface.(usermodels.User)
+
+	// Extracting the ShoppingCart id from the path
+	shoppingCartId := c.Param("shoppingCartId")
+
+	// Find the shoppingCart by id
+	var shoppingCart models.ShoppingCart
+	resultShoppingCart := initializers.DB.Where("id = ?", shoppingCartId).First(&shoppingCart)
+
+	if resultShoppingCart.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "ShoppingCart not found"})
+		return
+	}
+
+	//za svaki orderItem treba da nadjem turu na koju se odnosi i da tu turu
+	//dodam kod odgovarajuceg usera u BoughtTours
+	for _, orderItem := range shoppingCart.OrderItems {
+		var tour models.Tour
+		if err := initializers.DB.Where("id = ?", orderItem.TourId).First(&tour).Error; err != nil {
+
+			c.JSON(http.StatusNotFound, gin.H{"error": "Tour not found"})
+			continue // Skip to the next orderItem
+		}
+
+		//useru dodati tu turu u BoughtTours
+		//u UserM dodati AddTourToBoughtTours i proslediti turu i usera
+		//posto se info o useru tamo nalaze i trb da se doda tamo u bazu
+
+	}
+
+	//ocistiti ShoppingCart
+}*/

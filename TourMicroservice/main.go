@@ -27,10 +27,10 @@ func main() {
 	r.POST("/create-tour", controllers.CreateTour)
 	r.GET("/guide/:id/tours", controllers.GetToursByUser)
 
-	r.POST("/create-shoppingCart", controllers.CreateShoppingCart)
-	r.PUT("/clear-shoppingCart/:id", controllers.ClearShoppingCart)
-	r.PUT("/addToShoppingCart/:tourId/:shoppingCartId/:numOfPeople", controllers.AddToShoppingCart)
-	r.PUT("/removeFromShoppingCart/:orderItemId/:shoppingCartId", controllers.RemoveFromShoppingCart)
+	r.POST("/create-shoppingCart" /*middleware.RequireAuth, middleware.CheckIfTourist,*/, controllers.CreateShoppingCart)
+	r.PUT("/clear-shoppingCart/:id" /* middleware.RequireAuth, middleware.CheckIfTourist,*/, controllers.ClearShoppingCart)
+	r.PUT("/addToShoppingCart/:tourId/:shoppingCartId/:numOfPeople" /*middleware.RequireAuth, middleware.CheckIfTourist,*/, controllers.AddToShoppingCart)
+	r.PUT("/removeFromShoppingCart/:orderItemId/:shoppingCartId" /*middleware.RequireAuth, middleware.CheckIfTourist,*/, controllers.RemoveFromShoppingCart)
 	r.Run()
 
 }
