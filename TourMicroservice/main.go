@@ -26,6 +26,9 @@ func main() {
 
 	r.POST("/create-tour", controllers.CreateTour)
 	r.GET("/guide/:id/tours", controllers.GetToursByUser)
+
+	r.POST("/create-shoppingCart", controllers.CreateShoppingCart)
+	r.PUT("/clear-shoppingCart", controllers.ClearShoppingCart)
 	r.Run()
 
 }
