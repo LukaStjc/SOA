@@ -30,6 +30,7 @@ func main() {
 	r.POST("/create-shoppingCart", controllers.CreateShoppingCart)
 	r.PUT("/clear-shoppingCart/:id", controllers.ClearShoppingCart)
 	r.PUT("/addToShoppingCart/:tourId/:shoppingCartId/:numOfPeople", controllers.AddToShoppingCart)
+	r.PUT("/removeFromShoppingCart/:orderItemId/:shoppingCartId", controllers.RemoveFromShoppingCart)
 	r.Run()
 
 }

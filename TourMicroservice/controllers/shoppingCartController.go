@@ -65,8 +65,6 @@ func ClearShoppingCart(c *gin.Context) {
 }
 
 func AddToShoppingCart(c *gin.Context) {
-	//bice prosledjena tourId i shoppingCartId
-
 	// Extracting the Tour id from the path
 	tourId := c.Param("tourId")
 
@@ -106,6 +104,52 @@ func AddToShoppingCart(c *gin.Context) {
 
 	//povecavamo cenu u shoppingCart-u
 	shoppingCart.Price += orderItem.TourPrice
+
+	c.JSON(http.StatusOK, gin.H{"shoppingCart": shoppingCart})
+}
+
+func RemoveFromShoppingCart(c *gin.Context) {
+	// Extracting the orderItem id from the path
+	orderItemId := c.Param("orderItemId")
+
+	// Extracting the ShoppingCart id from the path
+	shoppingCartId := c.Param("shoppingCartId")
+
+	// Find the tour by id
+	var orderItem models.OrderItem
+	resultOrderItem := initializers.DB.Where("id = ?", orderItem).First(&orderItemId)
+
+	// Find the shoppingCart by id
+	var shoppingCart models.ShoppingCart
+	resultShoppingCart := initializers.DB.Where("id = ?", shoppingCartId).First(&shoppingCart)
+
+	if resultOrderItem.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "OrderItem not found"})
+		return
+	}
+
+	if resultShoppingCart.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "ShoppingCart not found"})
+		return
+	}
+
+	//brisemo orderItem iz shoppingCart-a
+	indexToDelete := -1
+	for i, item := range shoppingCart.OrderItems {
+		if item == &orderItem {
+			indexToDelete = i
+			break
+		}
+	}
+
+	if indexToDelete != -1 {
+		shoppingCart.OrderItems = append(shoppingCart.OrderItems[:indexToDelete], shoppingCart.OrderItems[indexToDelete+1:]...)
+	} else {
+		c.JSON(http.StatusNotFound, gin.H{"error": "OrderItem not found in the ShoppingCart"})
+	}
+
+	//smanjujemo cenu u shoppingCart-u
+	shoppingCart.Price -= orderItem.TourPrice
 
 	c.JSON(http.StatusOK, gin.H{"shoppingCart": shoppingCart})
 }
