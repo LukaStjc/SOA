@@ -1,7 +1,9 @@
 package initializers
 
 import (
+	"go-userm/graphdb"
 	"go-userm/models"
+	"log"
 	"time"
 
 	"gorm.io/gorm"
@@ -66,5 +68,18 @@ func PreloadUsers() {
 
 	for _, u := range users {
 		DB.Create(&u)
+
+		graphUser := models.GraphDBUser{
+			// ID: u.ID,
+			ID:       int64(u.ID),
+			Username: u.Username,
+		}
+
+		// log.Printf("username: %s", u.Username)
+		// log.Println("Neo4j driver prvi ulaz:  ", Neo4JDriver)
+
+		if err := graphdb.WriteUser(&graphUser, Neo4JDriver); err != nil {
+			log.Printf("Error creating user node for %s in Neo4j database: %v", u.Username, err)
+		}
 	}
 }

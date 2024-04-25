@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"go-userm/graphdb"
 	"go-userm/initializers"
 	"go-userm/models"
+	"log"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -83,6 +85,20 @@ func SignUp(c *gin.Context) {
 	}
 
 	if err := tx.Create(&user).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Failed to create user. The log is: " + err.Error(),
+		})
+		return
+	}
+
+	graphUser := models.GraphDBUser{
+		ID:       int64(user.ID),
+		Username: user.Username,
+	}
+
+	if err := graphdb.WriteUser(&graphUser, initializers.Neo4JDriver); err != nil {
+		log.Printf("Error creating user node for %s in Neo4j database: %v", user.Username, err)
 		tx.Rollback()
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Failed to create user. The log is: " + err.Error(),
@@ -196,21 +212,20 @@ func BlockUser(c *gin.Context) {
 }
 
 func Follow(c *gin.Context) {
+
 	authUser, _ := c.Get("user")
-
 	user := authUser.(models.User)
-	username := c.Param("username")
+	followeeUsername := c.Param("username")
 
-	// Find the user that I want to follow by username
-	var newUser models.User
-	result := initializers.DB.Where("username = ?", username).First(&newUser)
+	var followeeUser models.User
+	result := initializers.DB.Where("username = ?", followeeUsername).First(&followeeUser)
 
 	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not founddddd"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found!"})
 		return
 	}
 
-	if newUser.Role.String() == "Administrator" {
+	if followeeUser.Role.String() == "Administrator" {
 		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Cannot follow an admin!"})
 		return
 	}
@@ -220,24 +235,25 @@ func Follow(c *gin.Context) {
 		return
 	}
 
-	if user.ID == newUser.ID {
+	if user.ID == followeeUser.ID {
 		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Cannot follow yourself, there will be a profile when frontend is done!"})
 		return
 	}
 
-	for _, u := range user.Follows {
-		if u.ID == newUser.ID {
-			initializers.DB.Model(&user).Association("follow_id").Delete(&newUser)
-			c.JSON(http.StatusOK, gin.H{"message": "User unfollowed"})
-			return
-		}
+	// Vasilije:
+	// Ovde se vise ne radi automatski unfollow ako korisnik ponovo pokusa da zaprati osobu koju vec prati.
+	// To se sada radi u drugom kontroleru.
+	// Takodje, ta odluka ne smeta frontu, jer se na frontu dugme follow disable-uje
+	// ako se korisnik vec prati, a to se sazna preko endpointa GetFollowed.
+
+	err := graphdb.FollowUser(user.Username, followeeUsername, initializers.Neo4JDriver)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to follow user"})
+		return
 	}
 
-	user.Follows = append(user.Follows, &newUser)
-	initializers.DB.Save(&user)
-
 	c.JSON(http.StatusOK, gin.H{"message": "User followed successfully"})
-
 }
 
 func IsBlocked(c *gin.Context) {
@@ -275,46 +291,59 @@ func IsBlocked(c *gin.Context) {
 }
 
 func DoesFollow(c *gin.Context) {
-	// Immediately return if the previous middleware aborted the request
 	if c.IsAborted() {
 		return
 	}
-	// Extracting the followers id and creators id from the path
 
 	followerId := c.Param("followerId")
 	creatorId := c.Param("creatorId")
 
-	// Find the follower by id
-	var follower models.User
-	//result1 := initializers.DB.Where("id = ?", followerId).First(&follower)
-	result1 := initializers.DB.Preload("Follows").Where("id = ?", followerId).First(&follower)
-
-	// Find the creator by id
-	var creator models.User
-	result2 := initializers.DB.Where("id = ?", creatorId).First(&creator)
-
-	if result1.Error != nil {
+	follower, err := graphdb.FindUserByID(followerId, initializers.Neo4JDriver)
+	if err != nil || follower == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User (follower) not found"})
 		return
 	}
+	log.Println(follower)
 
-	if result2.Error != nil {
+	creator, err := graphdb.FindUserByID(creatorId, initializers.Neo4JDriver)
+	if err != nil || creator == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User (creator) not found"})
 		return
 	}
+	log.Println(creator)
 
-	// Check if follower follows blog creator
-	for _, u := range follower.Follows {
-		if u.ID == creator.ID {
-			//c.JSON(http.StatusOK, gin.H{"message": "Follower follows blog creator"})
-			c.JSON(http.StatusOK, gin.H{"follows": true})
-			return
-		}
+	doesFollow, err := graphdb.DoesFollow(followerId, creatorId, initializers.Neo4JDriver)
+
+	log.Println("does follow")
+	log.Println(doesFollow)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Database exception"})
+		return
+	}
+	if doesFollow {
+		c.JSON(http.StatusOK, gin.H{"follows": true})
+		return
 	}
 
-	// If follower doesn't follow blog creator send bad request status
-	//c.JSON(http.StatusBadRequest, gin.H{"message": "Follower doesn't follow blog creator"})
 	c.JSON(http.StatusOK, gin.H{"follows": false})
+}
+
+func GetFriendsRecommendation(c *gin.Context) {
+	authUser, _ := c.Get("user")
+	user := authUser.(models.User)
+
+	if user.Role.String() == "Administrator" {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "You are the admin. You can't have friends."})
+		return
+	}
+
+	recommendations, err := graphdb.RecommendFriends(user.ID, initializers.Neo4JDriver)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get friend recommendations"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"recommendations": recommendations})
 }
 
 func GetById(c *gin.Context) {
@@ -334,27 +363,18 @@ func GetById(c *gin.Context) {
 }
 
 func GetFollowed(c *gin.Context) {
-	// Retrieve the authenticated user from the context
-	// Immediately return if the previous middleware aborted the request
 	if c.IsAborted() {
 		return
 	}
-	userInterface, _ := c.Get("user")
+	auth_user, _ := c.Get("user")
 
 	// NE SME *models.User!
-	user, _ := userInterface.(models.User)
+	user, _ := auth_user.(models.User)
 
-	// Preload the Follows relationship
-	result := initializers.DB.Preload("Follows").First(&user, user.ID)
-	if result.Error != nil {
+	followedUserIDs, err := graphdb.GetFollowees(user.ID, initializers.Neo4JDriver)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve followed users"})
 		return
-	}
-
-	// Extract the list of followed users
-	followedUserIDs := make([]int, len(user.Follows))
-	for i, followedUser := range user.Follows {
-		followedUserIDs[i] = int(followedUser.ID)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"followed_user_ids": followedUserIDs})

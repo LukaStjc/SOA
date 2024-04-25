@@ -101,7 +101,37 @@ services:
       test: ["CMD-SHELL", "pg_isready -U postgres"]  # Check if PostgreSQL is ready
       interval: 10s  # Check every 10 seconds
       retries: 5  # Retry 5 times before considering it unhealthy
-   
+
+
+  # NoSQL: Neo4J DB
+  neo4j:
+    image: neo4j
+    restart: always
+    networks:
+      - servers
+    ports:
+      # bolt
+      - "7687:7687"
+      # http
+      - "7474:7474"
+      # https
+      - "7473:7473"
+    # Docker healtcheck - checks if database is "alive"
+    healthcheck:
+      # test: [ "CMD-SHELL", "echo RETURN 1 | cypher-shell -a <NEO4J_dbms_connector_bolt_listen__address> -u <user defined username> -p <user defined password> || exit 1" ]
+      test:
+        [
+          "CMD-SHELL",
+          "echo RETURN 1 | cypher-shell -a bolt://neo4j:7687 -u neo4j -p nekaSifra || exit 1",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    environment:
+      - NEO4J_AUTH=neo4j/nekaSifra
+    volumes:
+      - neo4j_data:/data
+
   tour-service:
     build:
       context: .
@@ -136,6 +166,7 @@ volumes:
     name: server-database
   database-data-auth:
     name: server-database-auth
+  neo4j_data:
 
 networks:
   servers:
