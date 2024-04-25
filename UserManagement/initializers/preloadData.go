@@ -23,7 +23,7 @@ func PreloadUsers() {
 			// password: "pass"
 			Password: "$2a$10$H6NBU8YNijGecCR6.iI1VucLMW76/2a40MAazaZrQpdEdg9YzCrUq",
 			Email:    "darko@gmail.com",
-			Role:     models.UserRole(2),
+			Role:     models.UserRole(1),
 		},
 		{
 			Model: gorm.Model{

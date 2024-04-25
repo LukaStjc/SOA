@@ -2,38 +2,67 @@ package initializers
 
 import (
 	"go-tourm/models"
-	"time"
-
-	"gorm.io/gorm"
 )
 
 func PreloadTours() {
 	var tours = []models.Tour{
 		{
-			Model: gorm.Model{
-				CreatedAt: time.Date(2024, 3, 19, 16, 57, 29, 351794000, time.FixedZone("CET", 1*3600)),
-				UpdatedAt: time.Date(2024, 3, 19, 16, 57, 29, 351794000, time.FixedZone("CET", 1*3600)),
-				DeletedAt: gorm.DeletedAt{Valid: false},
-			},
 			Name:        "tura1",
 			Description: "prva tura, veoma zanimljiva oca mi",
 			Type:        models.TourType(1),
 			Tags:        "susanj;bar",
+			Price:       2500.55,
+			UserID:      1,
 		},
 		{
-			Model: gorm.Model{
-				CreatedAt: time.Date(2024, 3, 19, 16, 58, 7, 81778000, time.FixedZone("CET", 1*3600)),
-				UpdatedAt: time.Date(2024, 3, 19, 16, 58, 7, 81778000, time.FixedZone("CET", 1*3600)),
-				DeletedAt: gorm.DeletedAt{Valid: false},
-			},
 			Name:        "tura2",
 			Description: "druga tura, veoma zanimljiva matere mi, ali malo teza",
 			Type:        models.TourType(2),
 			Tags:        "zlatibor;cajetina",
+			Price:       3500.35,
+			UserID:      1,
 		},
 	}
 
+	// Migrate the schema
+	DB.AutoMigrate(&models.Tour{}, &models.KeyPoint{})
+
+	// Create tours
 	for _, t := range tours {
 		DB.Create(&t)
+	}
+
+	// Preload key points for each tour
+	PreloadKeyPoints()
+
+}
+
+func PreloadKeyPoints() {
+	var keyPoints = []models.KeyPoint{
+		{
+			Longitude: 42.1,
+			Latitude:  19.1,
+			TourID:    1,
+		},
+		{
+			Longitude: 42.1,
+			Latitude:  19.9,
+			TourID:    1,
+		},
+		{
+			Longitude: 43.734520,
+			Latitude:  19.64,
+			TourID:    2,
+		},
+		{
+			Longitude: 43.734520,
+			Latitude:  19.693140,
+			TourID:    2,
+		},
+	}
+
+	// Create key points
+	for _, kp := range keyPoints {
+		DB.Create(&kp)
 	}
 }
