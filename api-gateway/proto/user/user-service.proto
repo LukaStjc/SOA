@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+option go_package = "proto/user";
+
+import "google/api/annotations.proto";
+
+import "google/protobuf/empty.proto";
+
+service UserService {
+    rpc UserSignUp(UserSignUpRequest) returns (UserSignUpResponse) {
+      option (google.api.http) = {
+        post: "/signup"
+        body: "*"
+      };
+    }
+    rpc Validate(google.protobuf.Empty) returns (ValidateResponse) {
+      option (google.api.http) = {
+        get: "/validate"
+      };
+    }
+}
+
+message UserSignUpRequest {
+  string email = 1;
+  string username = 2;
+  string password = 3;
+  uint32 role = 4;
+}
+
+message UserSignUpResponse {
+  string status = 1;
+}
+
+message ValidateResponse {
+    string responseContent = 1;
+}

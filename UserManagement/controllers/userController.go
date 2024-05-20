@@ -1,12 +1,12 @@
 package controllers
 
 import (
-	"bytes"
-	"encoding/json"
+	"context"
 	"fmt"
 	"go-userm/graphdb"
 	"go-userm/initializers"
 	"go-userm/models"
+	user "go-userm/proto/user/generatedFiles"
 	"log"
 	"net/http"
 	"regexp"
@@ -14,166 +14,266 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func SignUp(c *gin.Context) {
-	var body struct {
-		Username string
-		Password string
-		Email    string
-		Role     models.UserRole
+type UserHandler struct {
+	user.UnimplementedUserServiceServer
+	AuthServiceClient user.AuthServiceClient
+}
+
+func (s *UserHandler) UserSignUp(ctx context.Context, req *user.UserSignUpRequest) (*user.UserSignUpResponse, error) {
+	if req.Email == "" || req.Username == "" || req.Password == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "email, username, and password cannot be empty")
 	}
 
-	if c.Bind(&body) != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to read body",
-		})
-		return
-	}
-
-	if body.Email == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Email cannot be empty",
-		})
-		return
+	if req.Role == 0 || req.Role > 3 {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid value for role")
 	}
 
 	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
-	if !emailRegex.MatchString(body.Email) {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid email format",
-		})
-		return
+	if !emailRegex.MatchString(req.Email) {
+		return nil, status.Errorf(codes.InvalidArgument, "Invalid email format")
 	}
 
-	if body.Role.String() == "Unknown" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Role is not correct or can not be empty",
-		})
-		return
-	}
-
-	if body.Password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Password cannot be empty",
-		})
-		return
-	}
-
-	if body.Username == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Username cannot be empty",
-		})
-		return
-	}
-
-	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to hash password",
-		})
-		return
+		return nil, status.Errorf(codes.Internal, "Failed to hash password: %v", err)
 	}
 
 	tx := initializers.DB.Begin()
 
-	user := models.User{
-		Username: body.Username,
+	userr := models.User{
+		Username: req.Username,
 		Password: string(hash),
-		Email:    body.Email,
-		Role:     body.Role,
+		Email:    req.Email,
+		Role:     models.UserRole(req.Role),
 	}
 
-	if err := tx.Create(&user).Error; err != nil {
+	if err := tx.Create(&userr).Error; err != nil {
 		tx.Rollback()
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to create user. The log is: " + err.Error(),
-		})
-		return
+		return nil, status.Errorf(codes.Internal, "Failed to create user: %v", err)
 	}
 
 	graphUser := models.GraphDBUser{
-		ID:       int64(user.ID),
-		Username: user.Username,
+		ID:       int64(userr.ID),
+		Username: userr.Username,
 	}
 
 	if err := graphdb.WriteUser(&graphUser, initializers.Neo4JDriver); err != nil {
-		log.Printf("Error creating user node for %s in Neo4j database: %v", user.Username, err)
+		log.Printf("Error creating user node for %s in Neo4j database: %v", userr.Username, err)
 		tx.Rollback()
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to create user. The log is: " + err.Error(),
-		})
-		return
+		return nil, status.Errorf(codes.Internal, "Failed to create user in the neo4j: %v", err)
 	}
 
-	requestBody, err := json.Marshal(map[string]interface{}{
-		"ID":       user.ID,
-		"Username": body.Username,
-		"Password": string(hash),
-		"Role":     body.Role,
+	signUpResp, err := s.AuthServiceClient.SignUp(ctx, &user.SignUpRequest{
+		Id:       uint32(userr.ID),
+		Username: req.Username,
+		Password: string(hash),
+		Role:     req.Role,
 	})
-	if err != nil {
-		tx.Rollback()
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to marshal request body",
-		})
-		return
-	}
 
-	resp, err := http.Post("http://auth-service:3001/signup", "application/json", bytes.NewBuffer(requestBody))
 	if err != nil {
-		tx.Rollback()
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Failed to send request",
-		})
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		tx.Rollback()
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": fmt.Sprintf("Failed to create user. Status code: %d", resp.StatusCode),
-		})
-		fmt.Println(resp)
-		return
+		return nil, status.Errorf(codes.Internal, "Failed to register user in auth service: %v", err)
 	}
 
 	if err := tx.Commit().Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to commit transaction",
-		})
-		return
+		return nil, status.Errorf(codes.Internal, "Failed to commit transaction %v", err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{})
+	return &user.UserSignUpResponse{
+		Status: signUpResp.Status,
+	}, nil
 }
 
-func Validate(c *gin.Context) {
+// func SignUp(c *gin.Context) {
+// 	var body struct {
+// 		Username string
+// 		Password string
+// 		Email    string
+// 		Role     models.UserRole
+// 	}
 
-	// ako hoces da dobavis neko polje usera
-	// onda zapocinjes komandu na sledeci nacin
-	// user.(models.User).
+// 	if c.Bind(&body) != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{
+// 			"error": "Failed to read body",
+// 		})
+// 		return
+// 	}
 
-	userInterface, _ := c.Get("user")
+// 	if body.Email == "" {
+// 		c.JSON(http.StatusBadRequest, gin.H{
+// 			"error": "Email cannot be empty",
+// 		})
+// 		return
+// 	}
 
-	// NE SME *models.User!
-	user, _ := userInterface.(models.User)
+// 	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+// 	if !emailRegex.MatchString(body.Email) {
+// 		c.JSON(http.StatusBadRequest, gin.H{
+// 			"error": "Invalid email format",
+// 		})
+// 		return
+// 	}
 
-	if user.Role.String() == "Administrator" {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "Administrator Content.",
-		})
-	} else if user.Role.String() == "Guide" {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "Guide Content.",
-		})
-	} else {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "Tourist Content.",
-		})
+// 	if body.Role.String() == "Unknown" {
+// 		c.JSON(http.StatusBadRequest, gin.H{
+// 			"error": "Role is not correct or can not be empty",
+// 		})
+// 		return
+// 	}
+
+// 	if body.Password == "" {
+// 		c.JSON(http.StatusBadRequest, gin.H{
+// 			"error": "Password cannot be empty",
+// 		})
+// 		return
+// 	}
+
+// 	if body.Username == "" {
+// 		c.JSON(http.StatusBadRequest, gin.H{
+// 			"error": "Username cannot be empty",
+// 		})
+// 		return
+// 	}
+
+// 	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{
+// 			"error": "Failed to hash password",
+// 		})
+// 		return
+// 	}
+
+// 	tx := initializers.DB.Begin()
+
+// 	user := models.User{
+// 		Username: body.Username,
+// 		Password: string(hash),
+// 		Email:    body.Email,
+// 		Role:     body.Role,
+// 	}
+
+// 	if err := tx.Create(&user).Error; err != nil {
+// 		tx.Rollback()
+// 		c.JSON(http.StatusBadRequest, gin.H{
+// 			"error": "Failed to create user. The log is: " + err.Error(),
+// 		})
+// 		return
+// 	}
+
+// 	graphUser := models.GraphDBUser{
+// 		ID:       int64(user.ID),
+// 		Username: user.Username,
+// 	}
+
+// 	if err := graphdb.WriteUser(&graphUser, initializers.Neo4JDriver); err != nil {
+// 		log.Printf("Error creating user node for %s in Neo4j database: %v", user.Username, err)
+// 		tx.Rollback()
+// 		c.JSON(http.StatusBadRequest, gin.H{
+// 			"error": "Failed to create user. The log is: " + err.Error(),
+// 		})
+// 		return
+// 	}
+
+// 	requestBody, err := json.Marshal(map[string]interface{}{
+// 		"ID":       user.ID,
+// 		"Username": body.Username,
+// 		"Password": string(hash),
+// 		"Role":     body.Role,
+// 	})
+// 	if err != nil {
+// 		tx.Rollback()
+// 		c.JSON(http.StatusBadRequest, gin.H{
+// 			"error": "Failed to marshal request body",
+// 		})
+// 		return
+// 	}
+
+// 	resp, err := http.Post("http://auth-service:3001/signup", "application/json", bytes.NewBuffer(requestBody))
+// 	if err != nil {
+// 		tx.Rollback()
+// 		c.JSON(http.StatusBadRequest, gin.H{
+// 			"error": "Failed to send request",
+// 		})
+// 		return
+// 	}
+// 	defer resp.Body.Close()
+
+// 	if resp.StatusCode != http.StatusOK {
+// 		tx.Rollback()
+// 		c.JSON(http.StatusBadRequest, gin.H{
+// 			"error": fmt.Sprintf("Failed to create user. Status code: %d", resp.StatusCode),
+// 		})
+// 		fmt.Println(resp)
+// 		return
+// 	}
+
+// 	if err := tx.Commit().Error; err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{
+// 			"error": "Failed to commit transaction",
+// 		})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, gin.H{})
+// }
+
+func (h *UserHandler) Validate(ctx context.Context, req *emptypb.Empty) (*user.ValidateResponse, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, status.Errorf(codes.Internal, "Failed to retrieve metadata")
 	}
+
+	roles, ok := md["role"]
+	if !ok || len(roles) < 1 {
+		return nil, status.Errorf(codes.Unauthenticated, "User role not found")
+	}
+	role := roles[0]
+
+	var responseContent string
+	switch role {
+	case "Administrator":
+		responseContent = "Administrator Content."
+	case "Guide":
+		responseContent = "Guide Content."
+	default:
+		responseContent = "Tourist Content."
+	}
+
+	return &user.ValidateResponse{
+		ResponseContent: responseContent,
+	}, nil
 }
+
+// func Validate(c *gin.Context) {
+
+// 	// ako hoces da dobavis neko polje usera
+// 	// onda zapocinjes komandu na sledeci nacin
+// 	// user.(models.User).
+
+// 	userInterface, _ := c.Get("user")
+
+// 	// NE SME *models.User!
+// 	user, _ := userInterface.(models.User)
+
+// 	if user.Role.String() == "Administrator" {
+// 		c.JSON(http.StatusOK, gin.H{
+// 			"message": "Administrator Content.",
+// 		})
+// 	} else if user.Role.String() == "Guide" {
+// 		c.JSON(http.StatusOK, gin.H{
+// 			"message": "Guide Content.",
+// 		})
+// 	} else {
+// 		c.JSON(http.StatusOK, gin.H{
+// 			"message": "Tourist Content.",
+// 		})
+// 	}
+// }
 
 func BlockUser(c *gin.Context) {
 	// Immediately return if the previous middleware aborted the request
