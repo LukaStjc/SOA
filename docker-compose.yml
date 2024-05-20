@@ -31,8 +31,8 @@ services:
     image: auth-service
     container_name: auth-service
     restart: on-failure
-    ports:
-     - ${AUTHENTICATION_SERVICE_PORT}:${AUTHENTICATION_SERVICE_PORT}
+    # ports:
+    #  - ${AUTHENTICATION_SERVICE_PORT}:${AUTHENTICATION_SERVICE_PORT}
     environment:
       AUTHENTIFICATION_DB_PORT: ${AUTHENTIFICATION_DB_PORT}
       AUTHENTIFICATION_DB_HOST: ${AUTHENTIFICATION_DB_HOST}
@@ -43,6 +43,9 @@ services:
     depends_on:
       postgres-db-auth:
         condition: service_healthy
+ 
+
+
 
   user-service:
     build:
@@ -51,8 +54,8 @@ services:
     image: user-service
     container_name: user-service
     restart: on-failure
-    ports:
-     - ${USER_SERVICE_PORT}:${USER_SERVICE_PORT}
+    # ports:
+    #  - ${USER_SERVICE_PORT}:${USER_SERVICE_PORT}
     environment:
       AUTHENTICATION_SERVICE_DOMAIN: ${AUTHENTICATION_SERVICE_DOMAIN} 
       AUTHENTICATION_SERVICE_PORT: ${AUTHENTICATION_SERVICE_PORT}
@@ -65,7 +68,33 @@ services:
     depends_on:
       postgres-db:
         condition: service_healthy
-  
+
+
+  api-gateway:
+    image: api-gateway
+    container_name: api-gateway
+    hostname: api-gateway
+    build:
+      context: ./api-gateway/
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      AUTH_SERVICE_ADDRESS: auth-service:${AUTHENTICATION_SERVICE_PORT}
+      USER_SERVICE_ADDRESS: user-service:${USER_SERVICE_PORT}
+      GATEWAY_ADDRESS: ${GATEWAY_ADDRESS}
+    networks:
+     - servers
+    depends_on:
+      - user-service    
+      - auth-service
+
+    ports:
+      - "8500:8500"
+
+
+
+
+
   postgres-db:   #SOA baza
     image: postgres
     restart: on-failure

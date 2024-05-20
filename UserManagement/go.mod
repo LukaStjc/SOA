@@ -6,11 +6,12 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/joho/godotenv v1.5.1
 	golang.org/x/crypto v0.21.0
+	google.golang.org/grpc v1.64.0
 	gorm.io/driver/postgres v1.5.7
 	gorm.io/gorm v1.25.8
 )
 
-require golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+require google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237 // indirect
 
 require (
 	github.com/bytedance/sonic v1.11.3 // indirect
@@ -45,6 +46,6 @@ require (
 	golang.org/x/sync v0.6.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	google.golang.org/protobuf v1.33.0 // indirect
+	google.golang.org/protobuf v1.33.0
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

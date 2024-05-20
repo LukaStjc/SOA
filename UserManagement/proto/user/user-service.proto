@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+option go_package = "proto/user";
+
+import "google/protobuf/empty.proto";
+
+service UserService {
+    rpc UserSignUp(UserSignUpRequest) returns (UserSignUpResponse);
+    rpc Validate(google.protobuf.Empty) returns (ValidateResponse);
+}
+
+
+service AuthService {
+    rpc Authenticate(google.protobuf.Empty) returns (AuthenticateResponse);
+    rpc SignUp(SignUpRequest) returns (SignUpResponse);
+}
+
+message UserSignUpRequest {
+    string email = 1;
+    string username = 2;
+    string password = 3;
+    uint32 role = 4;
+}
+
+message UserSignUpResponse {
+    string status = 1;
+}
+
+message SignUpRequest {
+    uint32 id = 1;
+    string username = 2;
+    string password = 3;
+    uint32 role = 4;
+}
+
+message SignUpResponse {
+    string status = 1;
+}
+
+
+message ValidateResponse {
+    string responseContent = 1;
+}
+
+message AuthenticateResponse {
+    uint32 id = 1;
+    string username = 2;
+    string password = 3; 
+    uint32 role = 4;
+}
+

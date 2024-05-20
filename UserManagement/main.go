@@ -4,12 +4,29 @@ import (
 	"context"
 	"go-userm/controllers"
 	"go-userm/initializers"
-	"go-userm/middleware"
+	"go-userm/interceptors"
+	user "go-userm/proto/user/generatedFiles"
 	configurations "go-userm/startup"
+	"log"
+	"net"
+	"os"
+	"os/signal"
+	"syscall"
 
-	"github.com/gin-gonic/gin"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
+
+var authServiceClient user.AuthServiceClient
+
+func initAuthServiceClient() {
+	conn, err := grpc.Dial("auth-service:3001", grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("Could not connect to auth service: %v", err)
+	}
+	authServiceClient = user.NewAuthServiceClient(conn)
+}
 
 func init() {
 	configuration := configurations.NewConfigurations()
@@ -55,29 +72,59 @@ func main() {
 
 	initializers.PreloadUsers()
 
-	r := gin.Default()
+	// r := gin.Default()
 
-	r.Use(middleware.CORSMiddleware())
+	// r.Use(middleware.CORSMiddleware())
 
-	r.POST("/signup", controllers.SignUp)
+	// r.POST("/signup", controllers.SignUp)
 
-	r.GET("/:id", controllers.GetById)
+	// r.GET("/:id", controllers.GetById)
 
-	// RequireAuth
-	r.GET("/validate", middleware.RequireAuth, controllers.Validate)
-	r.POST("/follow/:username", middleware.RequireAuth, controllers.Follow)
-	r.GET("/is-blocked/:id", middleware.RequireAuth, controllers.IsBlocked)
-	r.GET("/does-follow/:followerId/:creatorId", middleware.RequireAuth, controllers.DoesFollow)
-	//r.GET("/does-follow/:creatorId", middleware.RequireAuth, controllers.DoesFollow)
+	// // RequireAuth
+	// r.GET("/validate", middleware.RequireAuth, controllers.Validate)
+	// r.POST("/follow/:username", middleware.RequireAuth, controllers.Follow)
+	// r.GET("/is-blocked/:id", middleware.RequireAuth, controllers.IsBlocked)
+	// r.GET("/does-follow/:followerId/:creatorId", middleware.RequireAuth, controllers.DoesFollow)
+	// //r.GET("/does-follow/:creatorId", middleware.RequireAuth, controllers.DoesFollow)
 
-	// RequireAuth + CheckIfAdmin
-	r.PUT("/ban/:username", middleware.RequireAuth, middleware.CheckIfAdmin, controllers.BlockUser)
+	// // RequireAuth + CheckIfAdmin
+	// r.PUT("/ban/:username", middleware.RequireAuth, middleware.CheckIfAdmin, controllers.BlockUser)
 
-	r.GET("/get-followed", middleware.RequireAuth, controllers.GetFollowed)
+	// r.GET("/get-followed", middleware.RequireAuth, controllers.GetFollowed)
 
-	// RequireAuth
-	r.GET("/get-friends-recommendation", middleware.RequireAuth, controllers.GetFriendsRecommendation)
+	// // RequireAuth
+	// r.GET("/get-friends-recommendation", middleware.RequireAuth, controllers.GetFriendsRecommendation)
 
-	r.Run()
+	// r.Run()
 
+	// Konekcija ka auth ms
+	initAuthServiceClient()
+
+	lis, err := net.Listen("tcp", ":3000")
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(interceptors.AuthInterceptor(authServiceClient)))
+	userHandler := &controllers.UserHandler{
+		AuthServiceClient: authServiceClient,
+	}
+
+	user.RegisterUserServiceServer(grpcServer, userHandler)
+	reflection.Register(grpcServer)
+
+	go func() {
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
+	}()
+
+	stopCh := make(chan os.Signal, 1)
+	signal.Notify(stopCh, os.Interrupt, syscall.SIGTERM)
+
+	<-stopCh
+
+	grpcServer.GracefulStop()
+	lis.Close()
+	log.Println("Shutting down gRPC server...")
 }
