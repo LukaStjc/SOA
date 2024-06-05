@@ -1,11 +1,13 @@
 package initializers
 
 import (
+	"context"
 	"go-userm/graphdb"
 	"go-userm/models"
 	"log"
 	"time"
 
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"gorm.io/gorm"
 )
 
@@ -66,6 +68,14 @@ func PreloadUsers() {
 		},
 	}
 
+	ctx := context.Background()
+	session := Neo4JDriver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
+	defer session.Close(ctx)
+	neo4j_tx, err := session.BeginTransaction(ctx)
+	if err != nil {
+		panic(err)
+	}
+
 	for _, u := range users {
 		DB.Create(&u)
 
@@ -78,8 +88,10 @@ func PreloadUsers() {
 		// log.Printf("username: %s", u.Username)
 		// log.Println("Neo4j driver prvi ulaz:  ", Neo4JDriver)
 
-		if err := graphdb.WriteUser(&graphUser, Neo4JDriver); err != nil {
+		if err := graphdb.WriteUser(&graphUser, ctx, neo4j_tx); err != nil {
 			log.Printf("Error creating user node for %s in Neo4j database: %v", u.Username, err)
+		} else {
+			neo4j_tx.Commit(ctx)
 		}
 	}
 }

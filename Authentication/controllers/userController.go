@@ -15,15 +15,18 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"go-jwt/initializers"
 	"go-jwt/models"
 	auth "go-jwt/proto/generatedFiles"
+	"log"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/nats-io/nats.go"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -33,6 +36,57 @@ import (
 
 type AuthHandler struct {
 	auth.UnimplementedAuthServiceServer
+	NATSClient *nats.Conn
+}
+
+type SignUpSuccessEvent struct {
+	UserID uint32 `json:"userId"`
+}
+
+type SignUpFailedEvent struct {
+	UserID uint32 `json:"userId"`
+	Error  string `json:"error"`
+}
+
+// TODO: Maybe it is unnecessary, but I can cover transaction management and in auth ms.
+// => Potpuno nepotrebno. Transakcija nema ovde posla, jer moze da se ode u dva pravca i to je sve.
+func PublishSignUpSuccess(natsClient *nats.Conn, userID uint32) {
+	successEvent := SignUpSuccessEvent{
+		UserID: userID,
+	}
+	fmt.Println("Usao u publish sign up success iz auth ms")
+	eventData, err := json.Marshal(successEvent)
+	if err != nil {
+		// TODO: What to do with transactions? And generally what to do in this case?
+		// => This wouldn't happen. This is a server side logic.
+		log.Printf("Error marshalling SignUpSuccess event: %v", err)
+		return
+	}
+	if err := natsClient.Publish("SignUpSuccess", eventData); err != nil {
+		// TODO: What to do with transactions? And generally what to do in this case?
+		// => This wouldn't happen. This is a server side logic.
+		log.Printf("Failed to publish SignUpSuccess event: %v", err)
+	}
+	fmt.Println("Satro je uspeo da odradio publish signup success dogadjaja iz auth ms")
+}
+
+func PublishSignUpFailed(natsClient *nats.Conn, userID uint32, errorMsg string) {
+	failedEvent := SignUpFailedEvent{
+		UserID: userID,
+		Error:  errorMsg,
+	}
+	eventData, err := json.Marshal(failedEvent)
+	if err != nil {
+		// TODO: What to do with transactions? And generally what to do in this case?
+		// => This wouldn't happen. This is a server side logic.
+		log.Printf("Error marshalling SignUpFailed event: %v", err)
+		return
+	}
+	if err := natsClient.Publish("SignUpFailed", eventData); err != nil {
+		// TODO: What to do with transactions? And generally what to do in this case?
+		// => This wouldn't happen. This is a server side logic.
+		log.Printf("Failed to publish SignUpFailed event: %v", err)
+	}
 }
 
 func (s *AuthHandler) SignUp(ctx context.Context, req *auth.SignUpRequest) (*auth.SignUpResponse, error) {
@@ -48,8 +102,14 @@ func (s *AuthHandler) SignUp(ctx context.Context, req *auth.SignUpRequest) (*aut
 
 	result := initializers.DB.Create(&newUser)
 	if result.Error != nil {
+		PublishSignUpFailed(s.NATSClient, uint32(newUser.ID), "Sign up process failed in authentication microservice!")
 		return &auth.SignUpResponse{Status: "Failed"}, result.Error
 	}
+
+	fmt.Println("Stiglo do pred objavljivanje dogadjana o uspesnosti iz auth ms")
+
+	PublishSignUpSuccess(s.NATSClient, uint32(newUser.ID))
+
 	return &auth.SignUpResponse{Status: "Success"}, nil
 }
 

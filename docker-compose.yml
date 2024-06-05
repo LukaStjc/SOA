@@ -1,7 +1,5 @@
 version: "3.7"
 
-
-
 services:
   blog-service:
     build:
@@ -38,14 +36,12 @@ services:
       AUTHENTIFICATION_DB_HOST: ${AUTHENTIFICATION_DB_HOST}
       PORT: ${AUTHENTICATION_SERVICE_PORT}
       SECRET: ${SECRET}
+      NATS_URL: nats://nats:4222
     networks:
       - servers
     depends_on:
       postgres-db-auth:
         condition: service_healthy
- 
-
-
 
   user-service:
     build:
@@ -63,12 +59,12 @@ services:
       USER_DB_HOST: ${USER_DB_HOST}
       PORT: ${USER_SERVICE_PORT}
       SECRET: ${SECRET}
+      NATS_URL: nats://nats:4222
     networks:
       - servers
     depends_on:
       postgres-db:
         condition: service_healthy
-
 
   api-gateway:
     image: api-gateway
@@ -91,9 +87,15 @@ services:
     ports:
       - "8500:8500"
 
-
-
-
+  nats:
+    image: 'nats:latest'
+    restart: on-failure
+    expose:
+      - "4222"
+    ports:
+      - "4222:4222"
+    networks:
+      - servers
 
   postgres-db:   #SOA baza
     image: postgres
@@ -130,7 +132,6 @@ services:
       test: ["CMD-SHELL", "pg_isready -U postgres"]  # Check if PostgreSQL is ready
       interval: 10s  # Check every 10 seconds
       retries: 5  # Retry 5 times before considering it unhealthy
-
 
   # NoSQL: Neo4J DB
   neo4j:

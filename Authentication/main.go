@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"go-jwt/controllers"
 	"go-jwt/initializers"
 	auth "go-jwt/proto/generatedFiles"
@@ -11,9 +13,20 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/nats-io/nats.go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
+
+var natsClient *nats.Conn
+
+func initNATSClient() *nats.Conn {
+	conn, err := nats.Connect("nats://nats:4222")
+	if err != nil {
+		log.Fatalf("Failed to connect to NATS: %v", err)
+	}
+	return conn
+}
 
 func init() {
 	//initializers.LoadEnvVariables()
@@ -21,10 +34,69 @@ func init() {
 	initializers.ConnectToDb(configuration)
 	initializers.SyncDatabase()
 	initializers.PreloadUsers()
-
+	// initNATSClient()
 }
 
 func main() {
+	// NATS
+	log.Printf("DA LI DODJE DOVDE UOPSTE 1")
+
+	natsClient := initNATSClient() // Maybe it should be on the beggining?
+	defer natsClient.Close()
+	// natsClient, err := nats.Connect("nats://nats:4222")
+	// if err != nil {
+	// 	log.Fatalf("Failed to connect to NATS: %v", err)
+	// }
+
+	log.Printf("DA LI DODJE DOVDE UOPSTE 2")
+
+	_, err := natsClient.Subscribe("UserCreated", func(m *nats.Msg) {
+		var userCreatedEvent map[string]interface{}
+		err := json.Unmarshal(m.Data, &userCreatedEvent)
+		if err != nil {
+			log.Printf("Failed to unmarshal user created event: %v", err)
+			return
+		}
+
+		log.Printf("DA LI DODJE DOVDE UOPSTE 3")
+
+		// Call SignUp in AuthService
+		ctx := context.Background()
+		signUpRequest := &auth.SignUpRequest{
+			Id:       uint32(userCreatedEvent["Id"].(float64)),
+			Username: userCreatedEvent["Username"].(string),
+			Password: userCreatedEvent["Password"].(string),
+			Role:     uint32(userCreatedEvent["Role"].(float64)), // TODO: Why is float64 used?
+		}
+		authHandler := &controllers.AuthHandler{
+			NATSClient: natsClient,
+		}
+		log.Printf("DA LI DODJE DOVDE UOPSTE 4")
+
+		_, err = authHandler.SignUp(ctx, signUpRequest)
+		if err != nil {
+			// controllers.PublishSignUpSuccess(natsClient, signUpRequest.Id)
+			log.Printf("Failed to sign up user in auth service: %v", err)
+
+			return
+		}
+		// else {
+		// 	log.Printf("Successfully signed up user %v in auth service", userCreatedEvent["username"])
+		// }
+
+		// controllers.PublishSignUpSuccess(natsClient, signUpRequest.Id, signUpResp)
+		log.Printf("Successfully signed up user %s in auth service", signUpRequest.Username)
+	})
+
+	if err != nil {
+		log.Printf("DA LI DODJE DOVDE UOPSTE 5")
+		log.Fatalf("Failed to subscribe to UserCreated: %v", err)
+	}
+
+	// // Block forever  // TODO: What is it????
+	// select {}
+
+	// -----------------------
 
 	// r := gin.Default()
 
@@ -66,4 +138,5 @@ func main() {
 	grpcServer.GracefulStop()
 	lis.Close()
 	log.Println("Shutting down gRPC server...")
+
 }

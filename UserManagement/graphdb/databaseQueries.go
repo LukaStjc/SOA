@@ -11,46 +11,82 @@ import (
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
-func WriteUser(user *models.GraphDBUser, neo4jDriver neo4j.DriverWithContext) error {
-	ctx := context.Background()
-	session := neo4jDriver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
-	defer session.Close(ctx)
+// func WriteUser(user *models.GraphDBUser, neo4jDriver neo4j.DriverWithContext) error {
+// func WriteUser(user *models.GraphDBUser, session neo4j.SessionWithContext, ctx context.Context) error {
+// 	// ctx := context.Background()
+// 	// session := neo4jDriver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
+// 	// defer session.Close(ctx)
 
-	savedUser, err := session.ExecuteWrite(ctx,
-		func(transaction neo4j.ManagedTransaction) (any, error) {
+// 	savedUser, err := session.ExecuteWrite(ctx,
+// 		func(transaction neo4j.ManagedTransaction) (any, error) {
 
-			existingUser, err := transaction.Run(ctx,
-				"MATCH (p:User) WHERE p.id = $id OR p.username = $username RETURN p",
-				map[string]any{"id": user.ID, "username": user.Username})
-			if err != nil {
-				return nil, err
-			}
+// 			existingUser, err := transaction.Run(ctx,
+// 				"MATCH (p:User) WHERE p.id = $id OR p.username = $username RETURN p",
+// 				map[string]any{"id": user.ID, "username": user.Username})
+// 			if err != nil {
+// 				return nil, err
+// 			}
 
-			if existingUser.Next(ctx) {
-				return "User already exists", nil
-			}
+// 			if existingUser.Next(ctx) {
+// 				return nil, errors.New("User already exists")
+// 			}
 
-			result, err := transaction.Run(ctx,
-				"CREATE (p:User) SET p.id = $id, p.username = $username RETURN p.username + ', from node ' + id(p)",
-				map[string]any{"id": user.ID, "username": user.Username})
-			if err != nil {
-				return nil, err
-			}
+// 			result, err := transaction.Run(ctx,
+// 				"CREATE (p:User) SET p.id = $id, p.username = $username RETURN p.username + ', from node ' + id(p)",
+// 				map[string]any{"id": user.ID, "username": user.Username})
+// 			if err != nil {
+// 				return nil, err
+// 			}
 
-			if result.Next(ctx) {
-				return result.Record().Values[0], nil
-			}
+// 			if result.Next(ctx) {
+// 				return result.Record().Values[0], nil
+// 			}
 
-			return nil, result.Err()
+// 			return nil, result.Err()
 
-		})
+// 		})
+// 	if err != nil {
+// 		fmt.Println("Error inserting USER:", err)
+// 		return err
+// 	}
+
+// 	fmt.Println(savedUser.(string))
+
+// 	return nil
+// }
+
+func WriteUser(user *models.GraphDBUser, ctx context.Context, tx neo4j.ManagedTransaction) error {
+	// ctx := context.Background()
+	// session := neo4jDriver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
+	// defer session.Close(ctx)
+
+	existingUser, err := tx.Run(ctx,
+		"MATCH (p:User) WHERE p.id = $id OR p.username = $username RETURN p",
+		map[string]any{"id": user.ID, "username": user.Username})
+
 	if err != nil {
-		fmt.Println("Error inserting USER:", err)
 		return err
 	}
 
-	fmt.Println(savedUser.(string))
-	return nil
+	// User already exists
+	if existingUser.Next(ctx) {
+		return errors.New("user already exists")
+	}
+
+	result, err := tx.Run(ctx,
+		"CREATE (p:User) SET p.id = $id, p.username = $username RETURN p.username + ', from node ' + id(p)",
+		map[string]any{"id": user.ID, "username": user.Username})
+
+	if err != nil {
+		return err
+	}
+
+	if result.Next(ctx) {
+		return nil
+	}
+
+	return result.Err()
+
 }
 
 func FollowUser(followerUsername string, followeeUsername string, neo4jDriver neo4j.DriverWithContext) error {
