@@ -27,7 +27,7 @@ import (
 type UserHandler struct {
 	user.UnimplementedUserServiceServer
 	AuthServiceClient  user.AuthServiceClient
-	NATSClient         *nats.Conn // I've added it, buy why?
+	NATSClient         *nats.Conn
 	TransactionManager *transactionmanager.Manager
 	Neo4jDriver        neo4j.DriverWithContext
 	Neo4jSession       neo4j.SessionWithContext
@@ -43,9 +43,7 @@ type SignUpFailedEvent struct {
 }
 
 func (h *UserHandler) HandleSignUpSuccess() {
-	fmt.Println("usli u sign up sucess u user management ms")
 	_, err := h.NATSClient.Subscribe("SignUpSuccess", func(m *nats.Msg) {
-		fmt.Println("Okinuo se sign up sucess u user management ms")
 		var event SignUpSuccessEvent
 		if err := json.Unmarshal(m.Data, &event); err != nil {
 			log.Printf("Error unmarshalling SignUpSuccess event: %v", err)
@@ -53,21 +51,17 @@ func (h *UserHandler) HandleSignUpSuccess() {
 		}
 
 		log.Printf("Received SignUpSuccess for user ID %d", event.UserID)
-		// Here, ideally, you would update the status of the user to "active" or similar
-		// Example: updateUserStatus(event.UserID, "active")
 
 		h.TransactionManager.Commit(event.UserID, context.Background())
 	})
 
 	if err != nil {
-		// TODO: What about transactions handling?
 		log.Fatalf("Failed to subscribe to SignUpSuccess events: %v", err)
 	}
 }
 
 func (h *UserHandler) HandleSignUpFailed() {
 	_, err := h.NATSClient.Subscribe("SignUpFailed", func(m *nats.Msg) {
-		fmt.Println("Okinuo se sign up failed u user management ms")
 		var event SignUpFailedEvent
 		if err := json.Unmarshal(m.Data, &event); err != nil {
 			log.Printf("Error unmarshalling SignUpFailed event: %v", err)
@@ -76,14 +70,11 @@ func (h *UserHandler) HandleSignUpFailed() {
 		}
 
 		log.Printf("Received SignUpFailed for user ID %d, Error: %s", event.UserID, event.Error)
-		// Here, you would handle the rollback of the user creation
-		// Example: rollbackUserCreation(event.UserID)
 
 		h.TransactionManager.Rollback(event.UserID, context.Background())
 	})
 
 	if err != nil {
-		// TODO: What about transactions handling?
 		log.Fatalf("Failed to subscribe to SignUpFailed events: %v", err)
 	}
 
@@ -127,20 +118,11 @@ func (h *UserHandler) UserSignUp(ctx context.Context, req *user.UserSignUpReques
 		Username: userr.Username,
 	}
 
-	// neo4j_tx, err := session.BeginTransaction(ctx)
 	neo4j_tx, err := h.Neo4jSession.BeginTransaction(ctx)
 	if err != nil {
 		panic(err)
 	}
 
-	// err = graphdb.WriteUser(&graphUser, initializers.Neo4JDriver)
-	// if err != nil {
-	// 	log.Printf("Error creating user node for %s in Neo4j database: %v", userr.Username, err)
-	// 	tx.Rollback()
-	// 	neo4j_tx.Rollback(ctx)
-	// 	return nil, status.Errorf(codes.Internal, "Failed to create user in the neo4j: %v", err)
-	// }
-	// err = graphdb.WriteUser(&graphUser, session, ctx)
 	err = graphdb.WriteUser(&graphUser, ctx, neo4j_tx)
 	if err != nil {
 		tx.Rollback()
@@ -149,32 +131,8 @@ func (h *UserHandler) UserSignUp(ctx context.Context, req *user.UserSignUpReques
 			return nil, status.Errorf(codes.Internal, "Failed to create user in Neo4j: ", err)
 		}
 
-		// Desio se error nakon pokusaja cuvanja korisnika u grafskoj bazi.
 		return nil, status.Errorf(codes.Internal, "Failed to create user in Neo4j: ", err)
 	}
-	// neo4j_tx.Commit(ctx)
-	// neo4j_tx.Close(ctx)
-
-	// if err != nil {
-	// 	log.Printf("Username already exists: %v", err)
-	// 	// log.Printf("Error in graph database: %v", err)
-	// 	tx.Rollback()
-	// 	neo4j_tx.Rollback(ctx)
-	// 	return nil, status.Errorf(codes.Internal, "Failed to create user in Neo4j: ", err)
-	// }
-
-	// signUpResp, err := s.AuthServiceClient.SignUp(ctx, &user.SignUpRequest{
-	// 	Id:       uint32(userr.ID),
-	// 	Username: req.Username,
-	// 	Password: string(hash),
-	// 	Role:     req.Role,
-	// })
-
-	// if err != nil {
-	// 	return nil, status.Errorf(codes.Internal, "Failed to register user in auth service: %v", err)
-	// }
-
-	// TODO: Should I delete the transaction afterwards?
 
 	// Publishing event through NATS
 	userCreatedEvent := map[string]interface{}{
@@ -193,25 +151,14 @@ func (h *UserHandler) UserSignUp(ctx context.Context, req *user.UserSignUpReques
 
 	h.TransactionManager.SavePendingTransaction(uint32(userr.ID), tx, neo4j_tx)
 
-	// log.Fatalf("Transakcija save pending, sacuvana u recniku: duzine je %v", len(s.TransactionManager.Transactions))
-
-	fmt.Println("Prosao prethodni ispis u vei transakcije save pending")
-
 	err = h.NATSClient.Publish("UserCreated", eventData)
-	fmt.Println("Prosao publish dogadjaja usercreated")
 	if err != nil {
-		// tx.Rollback()
 		h.TransactionManager.Rollback(uint32(userr.ID), ctx)
-		fmt.Println("Usao u roll back zbog loseg publisha")
 		return nil, status.Errorf(codes.Internal, "Failed to publish user created event: %v", err)
 	}
 
-	// if err := tx.Commit().Error; err != nil {
-	// 	return nil, status.Errorf(codes.Internal, "Failed to commit transaction %v", err)
-	// }
-
 	return &user.UserSignUpResponse{
-		Status: "STATUS: Pending. \nAccount needs to be confirmed by the administrator. Try to log in in a few minutes.", // I cant forward the answer later, since I wouldnt receive a response, I can make another consumer and another event to listen for actions result
+		Status: "STATUS: Pending. \nAccount needs to be confirmed by the administrator. Try to log in in a few minutes.",
 	}, nil
 
 	// return &user.UserSignUpResponse{

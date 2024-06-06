@@ -56,9 +56,6 @@ import (
 // }
 
 func WriteUser(user *models.GraphDBUser, ctx context.Context, tx neo4j.ManagedTransaction) error {
-	// ctx := context.Background()
-	// session := neo4jDriver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
-	// defer session.Close(ctx)
 
 	existingUser, err := tx.Run(ctx,
 		"MATCH (p:User) WHERE p.id = $id OR p.username = $username RETURN p",
