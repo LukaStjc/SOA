@@ -4,17 +4,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// type KeyPointType int
-
-// const (
-// 	Beggining KeyPointType = iota + 1
-// 	Middle
-// 	Ending
-// )
-
 type KeyPoint struct {
 	gorm.Model
+	ID        uint    `gorm:"primaryKey"`
 	Longitude float64 `json:"longitude"`
 	Latitude  float64 `json:"latitude"`
-	TourID    int     `json:"tourId" gorm:"type:int;foreignKey:TourID"`
+	TourID    uint    `json:"tourId" gorm:"type:uint;foreignKey:TourID"`
 }

@@ -14,7 +14,7 @@ func init() {
 	configuration := configurations.NewConfigurations()
 	initializers.ConnectToDb(configuration)
 	initializers.SyncDatabase()
-	initializers.PreloadUsers()
+	// initializers.PreloadUsers()
 
 }
 

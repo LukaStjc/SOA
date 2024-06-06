@@ -24,8 +24,14 @@ func main() {
 
 	r.Use(middleware.CORSMiddleware())
 
-	r.POST("/create-tour", controllers.CreateTour)
-	r.GET("/guide/:id/tours", controllers.GetToursByUser)
+	r.POST("/create-tour", middleware.RequireAuth, controllers.CreateTour)
+	r.GET("/guide/:id/tours", middleware.RequireAuth, controllers.GetToursByUser)
+
+	r.POST("/postReview", middleware.RequireAuth, controllers.PostReview)
+
+	// nebitna
+	r.GET("/validate", middleware.RequireAuth, controllers.Validate)
+
 	r.Run()
 
 }

@@ -14,11 +14,13 @@ const (
 
 type Tour struct {
 	gorm.Model
+	ID          uint       `gorm:"primaryKey"`
 	Name        string     `json:"name" gorm:"not null;type:string"`
 	Description string     `json:"description" gorm:"not null;type:string"`
 	Type        TourType   `json:"type"`
 	Tags        string     `json:"tags" gorm:"type:string"`
 	Price       float64    `json:"price"`
+	AvgRate     float64    `json:"avgRate"`
 	UserID      uint       `json:"userId" gorm:"type:uint;foreignKey:UserID"`
 	KeyPoints   []KeyPoint `json:"keyPoints" gorm:"foreignKey:TourID"`
 }
