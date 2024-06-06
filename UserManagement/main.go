@@ -100,7 +100,7 @@ func main() {
 	// Konekcija ka auth ms
 	initAuthServiceClient()
 
-	lis, err := net.Listen("tcp", ":3000")
+	lis, err := net.Listen("tcp", ":3002")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

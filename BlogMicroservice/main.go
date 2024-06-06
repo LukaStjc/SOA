@@ -112,4 +112,5 @@ func main() {
 	handler2 := &handler.BlogHandler{BlogService: service2}
 
 	startServer( /*handler,*/ handler1, handler2)
+
 }

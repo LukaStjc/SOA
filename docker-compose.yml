@@ -1,6 +1,9 @@
 version: "3.7"
 
-
+x-logging: &fluent-bit
+  driver: fluentd
+  options:
+    fluentd-address: ${FLUENT_BIT_ADDRESS}:24224
 
 services:
   blog-service:
@@ -12,14 +15,14 @@ services:
     restart: on-failure
     ports:
       - ${BLOG_SERVICE_PORT}:${BLOG_SERVICE_PORT}
+    networks:
+      - servers
     environment:
       USER_SERVICE_DOMAIN: ${USER_SERVICE_DOMAIN} 
       USER_SERVICE_PORT: ${USER_SERVICE_PORT}
       BLOG_DB_PORT: ${USER_DB_PORT}
       BLOG_DB_HOST: ${USER_DB_HOST}
       PORT: ${BLOG_SERVICE_PORT}
-    networks:
-      - servers
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -94,12 +97,12 @@ services:
 
 
 
-
   postgres-db:   #SOA baza
     image: postgres
     restart: on-failure
     networks:
       - servers
+      - monitoring
     ports:
       - ${USER_DB_EXTERNAL_PORT}:5432 
     environment:
@@ -112,6 +115,7 @@ services:
       test: ["CMD-SHELL", "pg_isready -U postgres"]  # Check if PostgreSQL is ready
       interval: 10s  # Check every 10 seconds
       retries: 5  # Retry 5 times before considering it unhealthy
+    logging: *fluent-bit
 
   postgres-db-auth:   #SOA_auth baza
     image: postgres
@@ -165,6 +169,7 @@ services:
     build:
       context: .
       dockerfile: ./TourMicroservice/Dockerfile
+      target: ${TARGET:-release-alpine}
     image: tour-service
     container_name: tour-service
     restart: on-failure
@@ -176,8 +181,11 @@ services:
       TOUR_DB_PORT: ${USER_DB_PORT}
       TOUR_DB_HOST: ${USER_DB_HOST}
       PORT: ${TOUR_SERVICE_PORT}
+      JAEGER_ENDPOINT: ${JAEGER_ENDPOINT}
+    logging: *fluent-bit
     networks:
       - servers
+      - monitoring
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -201,3 +209,5 @@ networks:
   servers:
     name: servers
     driver: bridge
+  monitoring:
+    external: true
