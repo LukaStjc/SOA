@@ -12,11 +12,12 @@ import (
 	"net/http"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 )
 
-const serviceName = "tour-service"
+//const serviceName = "tour-service"
 
 func init() {
 	configuration := configurations.NewConfigurations()
@@ -53,7 +54,7 @@ func httpErrorInternalServerError(err error, span trace.Span, ctx *gin.Context) 
 
 func httpError(err error, span trace.Span, ctx *gin.Context, status int) {
 	log.Println(err.Error())
-	span.RecordError(err)                              // Record the error in the span
-	span.SetStatus(trace.StatusCodeError, err.Error()) // Set the status
+	span.RecordError(err) // Record the error in the span
+	span.SetStatus(codes.Error, err.Error())
 	ctx.String(status, err.Error())
 }

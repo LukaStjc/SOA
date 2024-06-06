@@ -12,6 +12,7 @@ import (
 )
 
 var tp *trace.TracerProvider
+
 const serviceName = "tour-service"
 
 func initTracer() (*trace.TracerProvider, error) {

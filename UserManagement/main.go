@@ -70,7 +70,7 @@ func main() {
 	initializers.Neo4JDriver = driver
 	// initializers.Ctx = ctx
 
-	initializers.PreloadUsers()
+	//initializers.PreloadUsers()
 
 	// r := gin.Default()
 

@@ -69,7 +69,7 @@ services:
     networks:
       - servers
     depends_on:
-      postgres-db:
+      neo4j:
         condition: service_healthy
 
 
@@ -169,7 +169,6 @@ services:
     build:
       context: .
       dockerfile: ./TourMicroservice/Dockerfile
-      target: ${TARGET:-release-alpine}
     image: tour-service
     container_name: tour-service
     restart: on-failure

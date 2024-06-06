@@ -77,7 +77,7 @@ func CreateTour(c *gin.Context) {
 
 func CreateTour(c *gin.Context) {
 	// Start a new trace
-	traceContext, span := otel.Tracer(serviceName).Start(c.Request.Context(), "CreateTour")
+	traceContext, span := otel.Tracer("tour-service").Start(c.Request.Context(), "CreateTour")
 	defer func() { span.End() }()
 
 	var body struct {
@@ -117,7 +117,7 @@ func createTour(ctx context.Context, body struct {
 	Price       float64           `json:"price"`
 	UserID      uint              `json:"userId"`
 	KeyPoints   []models.KeyPoint `json:"keyPoints"`
-}, trace.Span span) (*models.Tour, error) {
+}, span trace.Span) (*models.Tour, error) {
 
 	span.AddEvent("Establishing connection to the database...")
 	// Retrieve database instance
@@ -154,7 +154,7 @@ func createTour(ctx context.Context, body struct {
 }
 
 func GetToursByUser(c *gin.Context) {
-	traceContext, span := otel.Tracer(serviceName).Start(c.Request.Context(), "GetToursByUser")
+	traceContext, span := otel.Tracer("tour-service").Start(c.Request.Context(), "GetToursByUser")
 	defer func() { span.End() }()
 
 	userIDStr := c.Param("id")
