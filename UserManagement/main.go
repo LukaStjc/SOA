@@ -132,7 +132,7 @@ func main() {
 	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(interceptors.AuthInterceptor(authServiceClient)))
 	userHandler := &controllers.UserHandler{
 		AuthServiceClient:  authServiceClient,
-		NATSClient:         natsClient, // TODO: Why did I do that?
+		NATSClient:         natsClient,
 		TransactionManager: txManager,
 		Neo4jDriver:        initializers.Neo4JDriver,
 		Neo4jSession:       session,
@@ -160,11 +160,6 @@ func main() {
 	lis.Close()
 	log.Println("Shutting down gRPC server...")
 
-	// // NATS
-	// natsClient, err := nats.Connect("nats://nats:4222")
-	// if err != nil {
-	// 	log.Fatalf("Failed to connect to NATS: %v", err)
-	// }
-	log.Println("Da li dodje dovde uopste??? ako dodje onda ovde smestiti konfiguraciju natsa")
+	// // N
 
 }
