@@ -133,33 +133,33 @@ services:
 
 
   # NoSQL: Neo4J DB
-  neo4j:
-    image: neo4j
-    restart: always
-    networks:
-      - servers
-    ports:
-      # bolt
-      - "7687:7687"
-      # http
-      - "7474:7474"
-      # https
-      - "7473:7473"
-    # Docker healtcheck - checks if database is "alive"
-    healthcheck:
-      # test: [ "CMD-SHELL", "echo RETURN 1 | cypher-shell -a <NEO4J_dbms_connector_bolt_listen__address> -u <user defined username> -p <user defined password> || exit 1" ]
-      test:
-        [
-          "CMD-SHELL",
-          "echo RETURN 1 | cypher-shell -a bolt://neo4j:7687 -u neo4j -p nekaSifra || exit 1",
-        ]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    environment:
-      - NEO4J_AUTH=neo4j/nekaSifra
-    volumes:
-      - neo4j_data:/data
+  # neo4j:
+  #   image: neo4j
+  #   restart: always
+  #   networks:
+  #     - servers
+  #   ports:
+  #     # bolt
+  #     - "7687:7687"
+  #     # http
+  #     - "7474:7474"
+  #     # https
+  #     - "7473:7473"
+  #   # Docker healtcheck - checks if database is "alive"
+  #   healthcheck:
+  #     # test: [ "CMD-SHELL", "echo RETURN 1 | cypher-shell -a <NEO4J_dbms_connector_bolt_listen__address> -u <user defined username> -p <user defined password> || exit 1" ]
+  #     test:
+  #       [
+  #         "CMD-SHELL",
+  #         "echo RETURN 1 | cypher-shell -a bolt://neo4j:7687 -u neo4j -p nekaSifra || exit 1",
+  #       ]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 10
+  #   environment:
+  #     - NEO4J_AUTH=neo4j/nekaSifra
+  #   volumes:
+  #     - neo4j_data:/data
 
   tour-service:
     build:
@@ -188,16 +188,89 @@ services:
     ports:
       - "8089:8080"   
     networks:
-      - servers  
+      - servers
+
+  # prometheus:
+  #   image: prom/prometheus:v2.35.0
+  #   restart: on-failure
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./prometheus:/etc/prometheus
+  #     - prometheus:/var/lib/prometheus
+  #   networks:
+  #     - monitoring
+  #   depends_on:
+  #     - node-exporter
+
+  prometheus:
+    image: docker.io/prom/prometheus:v2.52.0
+    container_name: prometheus
+    ports:
+      - 9090:9090
+    command: "--config.file=/etc/prometheus/prometheus.yaml"
+    volumes:
+      - ./config/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro
+      - prometheus:/prometheus
+    restart: unless-stopped
+
+  grafana:
+    image: docker.io/grafana/grafana-oss:11.0.0
+    container_name: grafana
+    ports:
+      - "3006:3000"
+    volumes:
+      - grafana:/var/lib/grafana
+    restart: unless-stopped
+
+  node-exporter:
+    image: prom/node-exporter:v1.3.1
+    restart: always
+    ports:
+      - "9100:9100"
+    networks:
+      - monitoring
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: cadvisor
+    ports:
+      - 8088:8080
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    privileged: true
+    restart: unless-stopped
+
+# njegova verzija node exportera
+  # node_exporter:
+  #   image: quay.io/prometheus/node-exporter:v1.8.1
+  #   container_name: node_exporter
+  #   command: "--path.rootfs=/host"
+  #   pid: host
+  #   restart: unless-stopped
+  #   volumes:
+  #     - /:/host:ro,rslave
 
 volumes:
   database-data:
     name: server-database
   database-data-auth:
     name: server-database-auth
-  neo4j_data:
+  prometheus:
+    name: prometheus
+  grafana:
+    name: grafana
+  # neo4j_data:
 
 networks:
   servers:
     name: servers
     driver: bridge
+  monitoring:
+    name: monitoring

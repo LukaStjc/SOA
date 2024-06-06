@@ -15,6 +15,8 @@ import (
 	"github.com/gorilla/mux"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // func initDB() *gorm.DB {
@@ -70,6 +72,9 @@ func startServer( /*handler *handler.StudentHandler,*/ handler1 *handler.BlogHan
 
 	router.HandleFunc("/blogs/{blogId}/comments", handler2.GetAllCommentsByBlogId).Methods("GET")
 	router.HandleFunc("/comments", handler2.GetAllComments).Methods("GET")
+
+	http.Handle("/metrics", promhttp.Handler())
+	http.ListenAndServe(":2112", nil)
 
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
 	println("Server starting")
